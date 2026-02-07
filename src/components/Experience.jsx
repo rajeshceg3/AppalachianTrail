@@ -20,7 +20,6 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
         <PerspectiveCamera makeDefault position={[0, 1.7, 8]} fov={40} />
 
         <color attach="background" args={[selectedRegion.fogColor]} />
-        <fog attach="fog" args={[selectedRegion.fogColor, 2, 25 / selectedRegion.fogDensity]} />
 
         <Suspense fallback={null}>
           <Scene region={selectedRegion} />
