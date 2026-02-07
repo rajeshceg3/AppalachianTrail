@@ -1,16 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const MapView = ({ onSelectRegion }) => {
-  const regions = [
-    { id: 'georgia', name: 'Georgia', desc: 'Southern Beginnings' },
-    { id: 'smokies', name: 'The Smokies', desc: 'Misty Highlands' },
-    { id: 'virginia', name: 'Virginia', desc: 'Rolling Ridges' },
-    { id: 'mid-atlantic', name: 'Mid-Atlantic', desc: 'Forested Passage' },
-    { id: 'new-england', name: 'New England', desc: 'Granite and Silence' },
-    { id: 'maine', name: 'Maine', desc: 'The Final Ascent' },
-  ];
-
+const MapView = ({ regions, onSelectRegion }) => {
   return (
     <div className="w-full h-full flex items-center justify-center bg-[#fcfaf7] overflow-hidden">
       <motion.div
@@ -66,21 +57,16 @@ const MapView = ({ onSelectRegion }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.5 + index * 0.2, duration: 2 }}
-                className={`group flex flex-col items-center ${region.id === 'georgia' ? 'cursor-pointer' : 'cursor-default'}`}
-                onClick={() => region.id === 'georgia' && onSelectRegion(region.id)}
+                className="group flex flex-col items-center cursor-pointer"
+                onClick={() => onSelectRegion(region.id)}
               >
                 <div className="relative">
-                  <div className={`text-xs tracking-[0.4em] uppercase transition-all duration-1000 ${region.id === 'georgia' ? 'text-stone-600 group-hover:text-stone-900 group-hover:tracking-[0.5em]' : 'text-stone-300'}`}>
+                  <div className="text-xs tracking-[0.4em] uppercase transition-all duration-1000 text-stone-300 group-hover:text-stone-900 group-hover:tracking-[0.5em]">
                     {region.name}
                   </div>
-                  {region.id === 'georgia' && (
-                    <motion.div
-                      layoutId="active-marker"
-                      className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-stone-400"
-                      animate={{ opacity: [0.3, 0.7, 0.3] }}
-                      transition={{ duration: 3, repeat: Infinity }}
+                  <motion.div
+                      className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                     />
-                  )}
                 </div>
                 <div className="h-4 overflow-hidden mt-2">
                   <div className="text-[9px] tracking-[0.2em] uppercase text-stone-400 opacity-0 group-hover:opacity-100 transition-all duration-700 transform translate-y-2 group-hover:translate-y-0">
