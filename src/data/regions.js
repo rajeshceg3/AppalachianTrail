@@ -12,7 +12,9 @@ export const regions = [
     treeColor1: '#2d3a22',
     treeColor2: '#36452a',
     particles: '#ffffff',
-    environment: 'forest'
+    environment: 'forest',
+    windIntensity: 0.4,
+    birdActivity: 0.6
   },
   {
     id: 'smokies',
@@ -27,7 +29,9 @@ export const regions = [
     treeColor1: '#1e293b', // Dark slate blue/green
     treeColor2: '#334155',
     particles: '#e0f2fe',
-    environment: 'park'
+    environment: 'park',
+    windIntensity: 0.6,
+    birdActivity: 0.4
   },
   {
     id: 'virginia',
@@ -42,7 +46,9 @@ export const regions = [
     treeColor1: '#15803d',
     treeColor2: '#166534',
     particles: '#f0fdf4',
-    environment: 'park'
+    environment: 'park',
+    windIntensity: 0.5,
+    birdActivity: 0.7
   },
   {
     id: 'mid-atlantic',
@@ -57,7 +63,9 @@ export const regions = [
     treeColor1: '#3f6212', // Dark olive
     treeColor2: '#365314',
     particles: '#e7e5e4',
-    environment: 'forest'
+    environment: 'forest',
+    windIntensity: 0.3,
+    birdActivity: 0.8
   },
   {
     id: 'new-england',
@@ -72,7 +80,9 @@ export const regions = [
     treeColor1: '#ea580c', // Orange
     treeColor2: '#b45309', // Brown/Orange
     particles: '#fdba74',
-    environment: 'sunset'
+    environment: 'sunset',
+    windIntensity: 0.7,
+    birdActivity: 0.3
   },
   {
     id: 'maine',
@@ -87,6 +97,8 @@ export const regions = [
     treeColor1: '#0f172a', // Very dark blue/green
     treeColor2: '#1e293b',
     particles: '#e2e8f0',
-    environment: 'park'
+    environment: 'park',
+    windIntensity: 0.9,
+    birdActivity: 0.1
   }
 ];
