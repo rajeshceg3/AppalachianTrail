@@ -18,9 +18,13 @@
       - Tuned exponential fog and lighting for realistic depth.
       - **Dynamic Environment**: Implemented "breathing" fog and pulsing sunlight for a living world feel.
       - **Post-Processing**: Added Bloom and Vignette for cinematic, soft visuals.
-  - **Vegetation**:
-      - **Wind Animation**: Implemented custom shader material (`WindMaterial`) for organic swaying of trees and foliage.
+  - **Vegetation & Rocks**:
+      - Refactored `Scene.jsx` to use modular `Vegetation` and `Rocks` components.
+      - Added procedural rock scattering (Dodecahedron instances) grounded on terrain.
+      - Enhanced tree placement and scale variation.
+      - *Note*: Wind animation shader disabled temporarily due to WebGL context stability issues in software rendering environments.
   - **Path Integration**: Winding path that follows terrain contours more naturally.
+  - **Content**: Updated region descriptors with poetic, evocative text as per PRD.
 - **Audio Experience**: Procedural audio engine implemented (Web Audio API).
   - Wind (dynamic intensity based on region).
   - Birds (randomized chirps based on activity).
@@ -38,12 +42,13 @@
 - [x] Organic terrain and vegetation placement.
 - [x] Audio implementation (Procedural wind, birds, footsteps).
 - [x] Mobile touch controls.
-- [x] Micro-Interactions (Wind, Atmosphere breathing, Map hover glow).
-- [x] Visual Polish (Bloom, Vignette).
+- [x] Micro-Interactions (Atmosphere breathing, Map hover glow).
+- [x] Visual Polish (Bloom, Vignette, Rocks, Varied Trees).
+- [x] Poetic Descriptors (Content polish).
 
 ## Next Steps
-- Further enhance 3D assets (More varied tree models, rocks, detailed textures).
-- Final content polish (poetic descriptors).
+- Re-enable wind shaders if hardware acceleration is available.
+- Texture improvements (optional).
 
 ## Completion Percentage
-**92%**
+**98%**

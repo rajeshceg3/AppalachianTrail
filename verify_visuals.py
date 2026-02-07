@@ -6,6 +6,7 @@ def run(playwright):
     page = browser.new_page()
 
     print("Navigating to app...")
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
     page.goto("http://localhost:5173")
 
     # Landing Page
