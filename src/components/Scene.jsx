@@ -11,7 +11,7 @@ import Vegetation from './Vegetation';
 import Rocks from './Rocks';
 import { getTerrainHeight } from '../utils/terrain';
 
-const Scene = ({ region }) => {
+const Scene = ({ region, audioEnabled }) => {
   const audioRef = useRef(null);
   const fogRef = useRef();
   const lightRef = useRef();
@@ -43,7 +43,7 @@ const Scene = ({ region }) => {
 
   return (
     <>
-      <AudioController ref={audioRef} region={region} />
+      <AudioController ref={audioRef} region={region} enabled={audioEnabled} />
       <Controls audioRef={audioRef} />
       <fogExp2 ref={fogRef} attach="fog" args={[region.fogColor, region.fogDensity]} />
       <SoftShadows size={25} samples={10} focus={0.5} />
