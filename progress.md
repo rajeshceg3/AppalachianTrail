@@ -10,6 +10,11 @@
   - Head bobbing for grounded feel.
   - Distinct visual profiles for all 6 regions (colors, fog, trees).
   - Loading transitions and region-specific text overlays.
+- Visual Polish:
+  - **Organic Terrain**: Implemented seeded Simplex noise for consistent, rolling hills.
+  - **Grounded Vegetation**: Fixed floating trees by aligning object placement logic with terrain mesh generation.
+  - **Atmosphere**: Tuned exponential fog and lighting for realistic depth without washing out the scene.
+  - **Path Integration**: Winding path that follows terrain contours more naturally.
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).
@@ -19,15 +24,13 @@
 - [x] Dynamic 3D environments for all regions.
 - [x] "Walk" movement implementation (Camera controls).
 - [x] Distinct visual atmosphere per region (Fog, colors, ground).
+- [x] Organic terrain and vegetation placement (Fixed floating objects).
 
 ## Next Steps
 - Implement actual audio files (Spatial forest ambience, wind, footsteps).
-- Enhance 3D assets:
-  - Better terrain geometry (hills/mountains instead of flat plane).
-  - More varied vegetation/trees.
-  - Advanced shaders for fog/lighting.
+- Further enhance 3D assets (More varied tree models, rocks, detailed textures).
 - Add "Micro-Interactions" (Leaves shifting, detailed hover states on map).
 - Refine mobile responsiveness for controls.
 
 ## Completion Percentage
-**60%**
+**75%**

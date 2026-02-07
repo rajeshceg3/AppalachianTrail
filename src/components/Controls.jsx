@@ -1,13 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getTerrainHeight } from '../utils/terrain';
 
 const Controls = () => {
   const { camera } = useThree();
   const moveForward = useRef(false);
   const moveBackward = useRef(false);
-  const velocity = useRef(new THREE.Vector3());
-  const direction = useRef(new THREE.Vector3());
   const euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
 
   // Head bobbing state
@@ -40,31 +39,7 @@ const Controls = () => {
       }
     };
 
-    // Simple look controls
-    const onMouseMove = (event) => {
-        if (event.buttons === 0) { // Only look if not dragging (optional, or always look)
-            // Sensitivity
-            const movementX = event.movementX || 0;
-            const movementY = event.movementY || 0;
-
-            euler.current.setFromQuaternion(camera.quaternion);
-
-            euler.current.y -= movementX * 0.002;
-            euler.current.x -= movementY * 0.002;
-
-            // Clamp pitch
-            euler.current.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.current.x));
-
-            camera.quaternion.setFromEuler(euler.current);
-        }
-    };
-
-    // For touch devices, maybe add touch controls later.
-    // For now, let's stick to mouse/keyboard as primary for the "walk" mechanic description.
-    // To make it work without pointer lock, we might just want to use the mouse position relative to center
-    // but the PRD says "Drag-to-look feels natural".
-
-    // Let's implement a drag-to-look behavior instead of pointer lock style for now
+    // Drag-to-look logic
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
 
@@ -87,7 +62,7 @@ const Controls = () => {
         euler.current.y -= deltaX * 0.002;
         euler.current.x -= deltaY * 0.002;
 
-        euler.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, euler.current.x)); // Limit looking up/down
+        euler.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, euler.current.x)); // Limit pitch
 
         camera.quaternion.setFromEuler(euler.current);
 
@@ -112,9 +87,6 @@ const Controls = () => {
 
   useFrame((state, delta) => {
     // Movement
-    direction.current.z = Number(moveForward.current) - Number(moveBackward.current);
-    direction.current.normalize();
-
     if (moveForward.current || moveBackward.current) {
         // Move in the direction the camera is facing (ignoring Y for grounded movement)
         const forward = new THREE.Vector3(0, 0, -1);
@@ -122,18 +94,26 @@ const Controls = () => {
         forward.y = 0;
         forward.normalize();
 
-        const speed = 2.0 * delta; // Slow walk speed
+        const speed = 2.0 * delta; // Walk speed
 
         if (moveForward.current) camera.position.addScaledVector(forward, speed);
         if (moveBackward.current) camera.position.addScaledVector(forward, -speed);
 
         // Head bob
         bobRef.current += delta * 10;
-        camera.position.y = 1.7 + Math.sin(bobRef.current) * 0.05;
+        const bobAmount = Math.sin(bobRef.current) * 0.05;
+
+        // Terrain following
+        const groundHeight = getTerrainHeight(camera.position.x, camera.position.z);
+        camera.position.y = groundHeight + 1.7 + bobAmount;
     } else {
-        // Return to resting height slowly
-        camera.position.y = THREE.MathUtils.lerp(camera.position.y, 1.7, delta * 5);
+        // Return to resting height slowly (and handle being pushed by terrain if we were moving and stopped?)
+        // Actually, just ensure we are at correct height for current position
         bobRef.current = 0;
+
+        const groundHeight = getTerrainHeight(camera.position.x, camera.position.z);
+        // Smoothly interpolate to standing height
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, groundHeight + 1.7, delta * 5);
     }
   });
 
