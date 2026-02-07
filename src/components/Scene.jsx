@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Float, Instances, Instance, SoftShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import Controls from './Controls';
 import Terrain from './Terrain';
 import Path from './Path';
+import AudioController from './AudioController';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
 
 const Vegetation = ({ region }) => {
@@ -83,6 +84,8 @@ const Vegetation = ({ region }) => {
 };
 
 const Scene = ({ region }) => {
+  const audioRef = useRef(null);
+
   // Particles for atmosphere
   const particles = useMemo(() => {
       return Array.from({ length: 40 }).map((_, i) => ({
@@ -97,7 +100,8 @@ const Scene = ({ region }) => {
 
   return (
     <>
-      <Controls />
+      <AudioController ref={audioRef} region={region} />
+      <Controls audioRef={audioRef} />
       <fogExp2 attach="fog" args={[region.fogColor, region.fogDensity]} />
       <SoftShadows size={25} samples={10} focus={0.5} />
 

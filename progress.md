@@ -15,6 +15,11 @@
   - **Grounded Vegetation**: Fixed floating trees by aligning object placement logic with terrain mesh generation.
   - **Atmosphere**: Tuned exponential fog and lighting for realistic depth without washing out the scene.
   - **Path Integration**: Winding path that follows terrain contours more naturally.
+- **Audio Experience**: Procedural audio engine implemented (Web Audio API).
+  - Wind (dynamic intensity based on region).
+  - Birds (randomized chirps based on activity).
+  - Footsteps (filtered noise bursts triggered by movement).
+- **Mobile Controls**: Touch navigation support (Tap-to-walk, Drag-to-look).
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).
@@ -25,12 +30,12 @@
 - [x] "Walk" movement implementation (Camera controls).
 - [x] Distinct visual atmosphere per region (Fog, colors, ground).
 - [x] Organic terrain and vegetation placement (Fixed floating objects).
+- [x] Audio implementation (Procedural wind, birds, footsteps).
+- [x] Mobile touch controls.
 
 ## Next Steps
-- Implement actual audio files (Spatial forest ambience, wind, footsteps).
 - Further enhance 3D assets (More varied tree models, rocks, detailed textures).
 - Add "Micro-Interactions" (Leaves shifting, detailed hover states on map).
-- Refine mobile responsiveness for controls.
 
 ## Completion Percentage
-**75%**
+**85%**
