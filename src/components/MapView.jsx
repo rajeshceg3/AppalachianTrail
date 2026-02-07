@@ -57,20 +57,28 @@ const MapView = ({ regions, onSelectRegion }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.5 + index * 0.2, duration: 2 }}
-                className="group flex flex-col items-center cursor-pointer"
+                className="group relative flex flex-col items-center cursor-pointer p-6"
                 onClick={() => onSelectRegion(region.id)}
               >
-                <div className="relative">
-                  <div className="text-xs tracking-[0.4em] uppercase transition-all duration-1000 text-stone-300 group-hover:text-stone-900 group-hover:tracking-[0.5em]">
-                    {region.name}
+                {/* Soft Glow Background */}
+                <motion.div
+                  className="absolute inset-0 bg-stone-200 blur-xl rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-700"
+                  layoutId={`glow-${region.id}`}
+                />
+
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="relative">
+                    <div className="text-xs tracking-[0.4em] uppercase transition-all duration-1000 text-stone-300 group-hover:text-stone-900 group-hover:tracking-[0.5em]">
+                      {region.name}
+                    </div>
+                    <motion.div
+                        className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                      />
                   </div>
-                  <motion.div
-                      className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    />
-                </div>
-                <div className="h-4 overflow-hidden mt-2">
-                  <div className="text-[9px] tracking-[0.2em] uppercase text-stone-400 opacity-0 group-hover:opacity-100 transition-all duration-700 transform translate-y-2 group-hover:translate-y-0">
-                    {region.desc}
+                  <div className="h-4 overflow-hidden mt-2">
+                    <div className="text-[9px] tracking-[0.2em] uppercase text-stone-400 opacity-0 group-hover:opacity-100 transition-all duration-700 transform translate-y-2 group-hover:translate-y-0">
+                      {region.desc}
+                    </div>
                   </div>
                 </div>
               </motion.div>
