@@ -70,11 +70,61 @@ const Controls = () => {
       }
     };
 
+    // Touch logic
+    let isTouchDragging = false;
+    let previousTouchPosition = { x: 0, y: 0 };
+
+    const onTouchStart = (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+
+            // Bottom 20% for movement
+            if (touch.clientY > window.innerHeight * 0.8) {
+                moveForward.current = true;
+            } else {
+                isTouchDragging = true;
+                previousTouchPosition = { x: touch.clientX, y: touch.clientY };
+            }
+        }
+    };
+
+    const onTouchEnd = () => {
+        moveForward.current = false;
+        isTouchDragging = false;
+    };
+
+    const onTouchMove = (e) => {
+        // Prevent scrolling
+        if (isTouchDragging || moveForward.current) {
+             if (e.cancelable) e.preventDefault();
+        }
+
+        if (isTouchDragging && e.touches.length > 0) {
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - previousTouchPosition.x;
+            const deltaY = touch.clientY - previousTouchPosition.y;
+
+            euler.current.setFromQuaternion(camera.quaternion);
+            euler.current.y -= deltaX * 0.005; // Slightly faster for touch
+            euler.current.x -= deltaY * 0.005;
+            euler.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, euler.current.x));
+
+            camera.quaternion.setFromEuler(euler.current);
+            previousTouchPosition = { x: touch.clientX, y: touch.clientY };
+        }
+    };
+
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
     document.addEventListener('mousedown', onMouseDown);
     document.addEventListener('mouseup', onMouseUp);
     document.addEventListener('mousemove', onMouseMoveDrag);
+
+    document.addEventListener('touchstart', onTouchStart, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
 
     return () => {
       document.removeEventListener('keydown', onKeyDown);
@@ -82,6 +132,10 @@ const Controls = () => {
       document.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('mousemove', onMouseMoveDrag);
+
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+      document.removeEventListener('touchmove', onTouchMove);
     };
   }, [camera]);
 

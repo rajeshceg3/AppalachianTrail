@@ -1,13 +1,30 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Float, Instances, Instance, SoftShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import Controls from './Controls';
 import Terrain from './Terrain';
 import Path from './Path';
+import Rocks from './Rocks';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
 
 const Vegetation = ({ region }) => {
   const treeCount = region.environment === 'forest' ? 400 : 150;
+  const fol1Ref = useRef();
+  const fol2Ref = useRef();
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    // Simple wind sway
+    if (fol1Ref.current) {
+        fol1Ref.current.rotation.x = Math.sin(time * 0.5) * 0.02;
+        fol1Ref.current.rotation.z = Math.cos(time * 0.3) * 0.02;
+    }
+    if (fol2Ref.current) {
+        fol2Ref.current.rotation.x = Math.sin(time * 0.5 + 1) * 0.03;
+        fol2Ref.current.rotation.z = Math.cos(time * 0.3 + 1) * 0.03;
+    }
+  });
 
   const treeData = useMemo(() => {
     const data = [];
@@ -52,32 +69,36 @@ const Vegetation = ({ region }) => {
       </Instances>
 
       {/* Foliage Bottom Layer */}
-      <Instances range={treeCount}>
-        <coneGeometry args={[1.0, 2.0, 7]} />
-        <meshStandardMaterial color={region.treeColor1} roughness={0.8} />
-        {treeData.map((d, i) => (
-          <Instance
-            key={`fol1-${i}`}
-            position={[d.position[0], d.position[1] + 1.5 * d.scale, d.position[2]]}
-            scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation, 0]}
-          />
-        ))}
-      </Instances>
+      <group ref={fol1Ref}>
+        <Instances range={treeCount}>
+            <coneGeometry args={[1.0, 2.0, 7]} />
+            <meshStandardMaterial color={region.treeColor1} roughness={0.8} />
+            {treeData.map((d, i) => (
+            <Instance
+                key={`fol1-${i}`}
+                position={[d.position[0], d.position[1] + 1.5 * d.scale, d.position[2]]}
+                scale={[d.scale, d.scale, d.scale]}
+                rotation={[0, d.rotation, 0]}
+            />
+            ))}
+        </Instances>
+      </group>
 
       {/* Foliage Top Layer */}
-      <Instances range={treeCount}>
-        <coneGeometry args={[0.7, 1.5, 7]} />
-        <meshStandardMaterial color={region.treeColor2} roughness={0.8} />
-        {treeData.map((d, i) => (
-          <Instance
-            key={`fol2-${i}`}
-            position={[d.position[0], d.position[1] + 2.5 * d.scale, d.position[2]]}
-            scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation + 1, 0]}
-          />
-        ))}
-      </Instances>
+      <group ref={fol2Ref}>
+        <Instances range={treeCount}>
+            <coneGeometry args={[0.7, 1.5, 7]} />
+            <meshStandardMaterial color={region.treeColor2} roughness={0.8} />
+            {treeData.map((d, i) => (
+            <Instance
+                key={`fol2-${i}`}
+                position={[d.position[0], d.position[1] + 2.5 * d.scale, d.position[2]]}
+                scale={[d.scale, d.scale, d.scale]}
+                rotation={[0, d.rotation + 1, 0]}
+            />
+            ))}
+        </Instances>
+      </group>
     </group>
   );
 };
@@ -117,6 +138,7 @@ const Scene = ({ region }) => {
       <Path color={region.pathColor || '#8b7355'} />
 
       <Vegetation region={region} />
+      <Rocks region={region} />
 
       {/* Atmospheric particles */}
       {particles.map((props, i) => (
