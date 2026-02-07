@@ -56,6 +56,7 @@ const MapView = ({ regions, onSelectRegion }) => {
                 key={region.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                whileHover={{ scale: 1.05 }}
                 transition={{ delay: 1.5 + index * 0.2, duration: 2 }}
                 className="group relative flex flex-col items-center cursor-pointer p-6"
                 onClick={() => onSelectRegion(region.id)}

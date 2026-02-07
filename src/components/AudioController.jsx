@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 
-const AudioController = forwardRef(({ region }, ref) => {
+const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const audioContextRef = useRef(null);
   const windNodeRef = useRef(null);
   const windGainRef = useRef(null);
@@ -11,7 +11,7 @@ const AudioController = forwardRef(({ region }, ref) => {
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
     playFootstep: () => {
-      triggerFootstep();
+      if (enabled) triggerFootstep();
     },
     resume: () => {
       if (audioContextRef.current?.state === 'suspended') {
@@ -116,7 +116,7 @@ const AudioController = forwardRef(({ region }, ref) => {
       const fluctuation = Math.sin(time * 0.5) * 0.5 + 0.5;
 
       const windIntensity = region.windIntensity || 0.5;
-      const baseGain = windIntensity * 0.05;
+      const baseGain = enabled ? windIntensity * 0.05 : 0;
 
       const targetGain = baseGain * (0.5 + 0.5 * fluctuation);
       const targetFreq = 200 + (windIntensity * 600) * fluctuation;
@@ -133,7 +133,7 @@ const AudioController = forwardRef(({ region }, ref) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isReady, region]); // Run when ready or region changes
+  }, [isReady, region, enabled]);
 
   // Birds Logic
   useEffect(() => {
@@ -145,28 +145,30 @@ const AudioController = forwardRef(({ region }, ref) => {
     const playBird = () => {
       if (!isActive) return;
 
-      const birdActivity = region.birdActivity || 0.3;
+      if (enabled) {
+        const birdActivity = region.birdActivity || 0.3;
 
-      if (Math.random() < birdActivity) {
-        const ctx = audioContextRef.current;
-        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        if (Math.random() < birdActivity) {
+          const ctx = audioContextRef.current;
+          if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
-        const t = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+          const t = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
 
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
 
-        const freq = 2000 + Math.random() * 3000;
-        osc.frequency.setValueAtTime(freq, t);
+          const freq = 2000 + Math.random() * 3000;
+          osc.frequency.setValueAtTime(freq, t);
 
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(0.02, t + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.02, t + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
 
-        osc.start(t);
-        osc.stop(t + 0.25);
+          osc.start(t);
+          osc.stop(t + 0.25);
+        }
       }
 
       const nextDelay = 3000 + Math.random() * 5000;
@@ -180,7 +182,7 @@ const AudioController = forwardRef(({ region }, ref) => {
       isActive = false;
       clearTimeout(timeoutId);
     };
-  }, [isReady, region]);
+  }, [isReady, region, enabled]);
 
   return null;
 });

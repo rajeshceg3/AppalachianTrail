@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Experience = ({ selectedRegion, onBackToMap }) => {
   const [loaded, setLoaded] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
 
   useEffect(() => {
     // Reset loaded state when region changes
@@ -22,7 +23,7 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
         <color attach="background" args={[selectedRegion.fogColor]} />
 
         <Suspense fallback={null}>
-          <Scene region={selectedRegion} />
+          <Scene region={selectedRegion} audioEnabled={audioEnabled} />
           <Environment preset={selectedRegion.environment} />
         </Suspense>
       </Canvas>
@@ -52,6 +53,20 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
           className="text-[10px] tracking-[0.4em] uppercase text-stone-500 hover:text-stone-800 transition-colors duration-700 cursor-pointer"
         >
           ← Map
+        </button>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loaded ? 1 : 0 }}
+        transition={{ delay: 1.2, duration: 2 }}
+        className="absolute top-8 right-8 z-10"
+      >
+        <button
+          onClick={() => setAudioEnabled(!audioEnabled)}
+          className="text-[10px] tracking-[0.4em] uppercase text-stone-500 hover:text-stone-800 transition-colors duration-700 cursor-pointer"
+        >
+          {audioEnabled ? 'MUTE' : 'AUDIO'}
         </button>
       </motion.div>
 
