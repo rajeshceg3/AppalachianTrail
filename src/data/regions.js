@@ -3,7 +3,7 @@ export const regions = [
     id: 'georgia',
     name: 'Georgia',
     desc: 'Southern Beginnings',
-    details: 'Springer Mountain. Morning air. The trail begins.',
+    details: 'Springer Mountain. Morning air carries the scent of damp earth and new beginnings.',
     color: '#e7e5e4', // Warm stone/white
     fogColor: '#e7e5e4',
     fogDensity: 0.01,
@@ -20,7 +20,7 @@ export const regions = [
     id: 'smokies',
     name: 'The Smokies',
     desc: 'Misty Highlands',
-    details: 'Clingmans Dome. Blue haze. Ancient mountains.',
+    details: 'Clingmans Dome. A sea of blue ridges fading into the ancient breath of the mountains.',
     color: '#dbeafe', // Blueish white
     fogColor: '#bfdbfe', // Light blue fog
     fogDensity: 0.012,
@@ -37,7 +37,7 @@ export const regions = [
     id: 'virginia',
     name: 'Virginia',
     desc: 'Rolling Ridges',
-    details: 'McAfee Knob. Endless green. Open sky.',
+    details: 'McAfee Knob. The valley floor opens wide, a patchwork quilt under an endless sky.',
     color: '#f0fdf4', // Very light green
     fogColor: '#dcfce7', // Pale green fog
     fogDensity: 0.008,
@@ -54,7 +54,7 @@ export const regions = [
     id: 'mid-atlantic',
     name: 'Mid-Atlantic',
     desc: 'Forested Passage',
-    details: 'Pine Grove Furnace. Canopy shadows. Quiet earth.',
+    details: 'Pine Grove Furnace. Sunlight filters through the canopy, painting shadows on the quiet floor.',
     color: '#f5f5f4', // Stone
     fogColor: '#d6d3d1', // Grey fog
     fogDensity: 0.011,
@@ -71,7 +71,7 @@ export const regions = [
     id: 'new-england',
     name: 'New England',
     desc: 'Granite and Silence',
-    details: 'White Mountains. Crisp air. Autumn light.',
+    details: 'White Mountains. Granite bones of the earth rise to meet the crisp, autumn wind.',
     color: '#fff7ed', // Orange tint white
     fogColor: '#ffedd5', // Light orange fog
     fogDensity: 0.009,
@@ -88,7 +88,7 @@ export const regions = [
     id: 'maine',
     name: 'Maine',
     desc: 'The Final Ascent',
-    details: 'Mount Katahdin. Alpine wind. The end.',
+    details: 'Mount Katahdin. The northern terminus, where the trail ends and the sky begins.',
     color: '#f8fafc', // Slate white
     fogColor: '#cbd5e1', // Cool grey fog
     fogDensity: 0.006, // Clearer view

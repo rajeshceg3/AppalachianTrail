@@ -1,130 +1,15 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, Instances, Instance, SoftShadows } from '@react-three/drei';
+import { Float, SoftShadows } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Controls from './Controls';
 import Terrain from './Terrain';
 import Path from './Path';
 import AudioController from './AudioController';
-import { getTerrainHeight, getPathX } from '../utils/terrain';
-
-const WindMaterial = ({ color, ...props }) => {
-  const materialRef = useRef();
-
-  useFrame(({ clock }) => {
-    if (materialRef.current && materialRef.current.userData.shader) {
-      materialRef.current.userData.shader.uniforms.uTime.value = clock.getElapsedTime();
-    }
-  });
-
-  const onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = { value: 0 };
-    materialRef.current.userData.shader = shader;
-
-    shader.vertexShader = `
-      uniform float uTime;
-    ` + shader.vertexShader;
-
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      `
-      #include <begin_vertex>
-      // Access instance position from instanceMatrix
-      float instanceX = instanceMatrix[3][0];
-      float instanceZ = instanceMatrix[3][2];
-
-      // Simple wind sway
-      float windStrength = 0.1;
-      float sway = sin(uTime * 1.5 + instanceX * 0.5 + instanceZ * 0.3) * windStrength;
-
-      // Apply more sway to top of geometry
-      // Assuming cone/cylinder centered at 0, max height ~1-2
-      float heightFactor = max(0.0, position.y + 0.5);
-
-      transformed.x += sway * heightFactor;
-      `
-    );
-  };
-
-  return <meshStandardMaterial ref={materialRef} color={color} onBeforeCompile={onBeforeCompile} {...props} />;
-};
-
-const Vegetation = ({ region }) => {
-  const treeCount = region.environment === 'forest' ? 400 : 150;
-
-  const treeData = useMemo(() => {
-    const data = [];
-    for (let i = 0; i < treeCount; i++) {
-      // Spread trees along a long strip of Z
-      const z = (Math.random() - 0.5) * 200;
-      const pathX = getPathX(z);
-
-      // Random X, but avoid path
-      let x = (Math.random() - 0.5) * 120;
-
-      // If too close to path, push it away
-      const dist = Math.abs(x - pathX);
-      if (dist < 4) {
-         if (x > pathX) x += 4;
-         else x -= 4;
-      }
-
-      const y = getTerrainHeight(x, z);
-      const scale = 0.8 + Math.random() * 0.7;
-      const rotation = Math.random() * Math.PI * 2;
-
-      data.push({ position: [x, y, z], scale, rotation });
-    }
-    return data;
-  }, [region.id, treeCount]);
-
-  return (
-    <group>
-      {/* Trunks */}
-      <Instances range={treeCount}>
-        <cylinderGeometry args={[0.15, 0.25, 1, 5]} />
-        <meshStandardMaterial color="#5c4033" roughness={0.9} />
-        {treeData.map((d, i) => (
-          <Instance
-            key={`trunk-${i}`}
-            position={[d.position[0], d.position[1] + 0.5 * d.scale, d.position[2]]}
-            scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation, 0]}
-          />
-        ))}
-      </Instances>
-
-      {/* Foliage Bottom Layer */}
-      <Instances range={treeCount}>
-        <coneGeometry args={[1.0, 2.0, 7]} />
-        <WindMaterial color={region.treeColor1} roughness={0.8} />
-        {treeData.map((d, i) => (
-          <Instance
-            key={`fol1-${i}`}
-            position={[d.position[0], d.position[1] + 1.5 * d.scale, d.position[2]]}
-            scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation, 0]}
-          />
-        ))}
-      </Instances>
-
-      {/* Foliage Top Layer */}
-      <Instances range={treeCount}>
-        <coneGeometry args={[0.7, 1.5, 7]} />
-        <WindMaterial color={region.treeColor2} roughness={0.8} />
-        {treeData.map((d, i) => (
-          <Instance
-            key={`fol2-${i}`}
-            position={[d.position[0], d.position[1] + 2.5 * d.scale, d.position[2]]}
-            scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation + 1, 0]}
-          />
-        ))}
-      </Instances>
-    </group>
-  );
-};
+import Vegetation from './Vegetation';
+import Rocks from './Rocks';
+import { getTerrainHeight } from '../utils/terrain';
 
 const Scene = ({ region }) => {
   const audioRef = useRef(null);
@@ -180,6 +65,7 @@ const Scene = ({ region }) => {
       <Path color={region.pathColor || '#8b7355'} />
 
       <Vegetation region={region} />
+      <Rocks region={region} />
 
       {/* Atmospheric particles */}
       {particles.map((props, i) => (
