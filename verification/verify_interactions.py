@@ -8,7 +8,7 @@ def run(playwright):
     page = context.new_page()
 
     print("Navigating to app...")
-    page.goto("http://localhost:5174")
+    page.goto("http://localhost:5173")
 
     # Landing Page
     print("Waiting for Begin button...")
