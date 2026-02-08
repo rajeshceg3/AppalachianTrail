@@ -1,48 +1,57 @@
 import React, { useMemo } from 'react';
 import { Instances, Instance } from '@react-three/drei';
+import { createNoise2D } from 'simplex-noise';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
+
+// Independent noise instance for rock distribution
+const noise2D = createNoise2D(Math.random);
 
 const Rocks = ({ region }) => {
   // More rocks in rocky regions (Maine, New England)
   const isRocky = region.id === 'maine' || region.id === 'new-england';
-  const rockCount = isRocky ? 150 : 50;
+  const rockCount = isRocky ? 250 : 80;
 
   const rockData = useMemo(() => {
     const data = [];
-    for (let i = 0; i < rockCount; i++) {
-      // Spread along Z
-      const z = (Math.random() - 0.5) * 200;
+    let attempts = 0;
+    const maxAttempts = rockCount * 20;
+
+    while (data.length < rockCount && attempts < maxAttempts) {
+      attempts++;
+
+      // Spread along Z and X
+      const z = (Math.random() - 0.5) * 250;
+      const x = (Math.random() - 0.5) * 150;
+
+      // Noise clustering for natural rock formations
+      // Higher frequency (0.1) than trees creates smaller, tighter clusters
+      const noiseVal = noise2D(x * 0.1, z * 0.1);
+
+      // Threshold: Rocks appear in patches
+      if (noiseVal < -0.1) continue;
+
       const pathX = getPathX(z);
+      const dist = Math.abs(x - pathX);
 
-      // Random X with rejection sampling to avoid path
-      let x, dist;
-      let attempts = 0;
-      do {
-        x = (Math.random() - 0.5) * 120;
-        dist = Math.abs(x - pathX);
-        attempts++;
-      } while (dist < 3 && attempts < 10);
+      // Avoid path
+      if (dist < 4) continue;
 
-      // Fallback
-      if (dist < 3) {
-         if (x > pathX) x = pathX + 3 + Math.random();
-         else x = pathX - 3 - Math.random();
-      }
-
+      // Get terrain height
       const y = getTerrainHeight(x, z);
 
-      // Random scale 0.5 - 1.5
-      const scale = 0.5 + Math.random() * 1.0;
+      // Random scale with more variety
+      const scale = 0.3 + Math.random() * 1.5; // 0.3 to 1.8
 
       // Random rotation
       const rotation = [
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        Math.random() * Math.PI
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2
       ];
 
-      // Embed in ground slightly
-      const yPos = y - (0.2 * scale);
+      // Embed in ground to look natural (not floating)
+      // Larger rocks are buried deeper
+      const yPos = y - (0.3 * scale);
 
       data.push({ position: [x, yPos, z], scale, rotation });
     }

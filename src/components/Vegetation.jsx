@@ -1,7 +1,14 @@
 import React, { useMemo, useRef } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
+import { createNoise2D } from 'simplex-noise';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
+
+// Create a seeded noise instance for consistent vegetation patterns
+// We can use a simple random or a fixed seed. Here we use Math.random for variety on load,
+// but for a fixed "world" feel we might want a seed.
+// Since the previous implementation used Math.random(), we'll stick to that but structured.
+const noise2D = createNoise2D(Math.random);
 
 const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
   const fol1Ref = useRef();
@@ -72,35 +79,44 @@ const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
 };
 
 const Vegetation = ({ region }) => {
-  const treeCount = region.environment === 'forest' ? 400 : 150;
+  const treeCount = region.environment === 'forest' ? 500 : 200;
 
   const treeData = useMemo(() => {
     const data = [];
-    for (let i = 0; i < treeCount; i++) {
-      // Spread trees along a long strip of Z
-      const z = (Math.random() - 0.5) * 200;
+    let attempts = 0;
+    // Safety limit to prevent infinite loops
+    const maxAttempts = treeCount * 10;
+
+    while (data.length < treeCount && attempts < maxAttempts) {
+      attempts++;
+
+      // Spread trees over a larger area to avoid edge artifacts
+      const z = (Math.random() - 0.5) * 250;
+      const x = (Math.random() - 0.5) * 150;
+
+      // 1. Noise-based Clustering
+      // Use noise to determine density. Trees grow in groves.
+      // noise2D returns -1 to 1.
+      // Scale coordinates (0.03) determines the size of the groves.
+      const noiseVal = noise2D(x * 0.03, z * 0.03);
+
+      // Threshold: Only place trees in "fertile" areas (noise > -0.2).
+      // This creates empty clearings naturally.
+      if (noiseVal < -0.2) continue;
+
+      // 2. Path Avoidance
       const pathX = getPathX(z);
+      const dist = Math.abs(x - pathX);
 
-      // Random X, but avoid path using rejection sampling
-      let x, dist;
-      let attempts = 0;
+      // Simple rejection: if too close to path, skip.
+      // Do NOT snap to edge (creates walls).
+      if (dist < 6) continue;
 
-      do {
-        x = (Math.random() - 0.5) * 120;
-        dist = Math.abs(x - pathX);
-        attempts++;
-      } while (dist < 4 && attempts < 10);
-
-      // Fallback if placement failed (rare)
-      if (dist < 4) {
-         if (x > pathX) x = pathX + 4 + Math.random() * 2;
-         else x = pathX - 4 - Math.random() * 2;
-      }
-
+      // 3. Placement
       const y = getTerrainHeight(x, z);
 
-      // Enhanced: Randomize scale
-      const scale = 0.5 + Math.random() * 1.0; // 0.5 to 1.5
+      // Randomized scale and rotation for variety
+      const scale = 0.6 + Math.random() * 1.2; // 0.6 to 1.8
       const rotation = Math.random() * Math.PI * 2;
 
       data.push({ position: [x, y, z], scale, rotation });
