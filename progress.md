@@ -31,6 +31,10 @@
   - Footsteps (filtered noise bursts triggered by movement).
   - Mute/Unmute control for user accessibility.
 - **Mobile Controls**: Touch navigation support (Tap-to-walk, Drag-to-look).
+- **Enhanced Organic Feel**:
+  - Refined object placement logic (rejection sampling) to eliminate artificial linear boundaries near the path.
+  - Implemented multi-phase wind animation for vegetation to prevent synchronized swaying.
+  - Added complexity to path winding algorithm for more natural curvature.
 - **Verification**:
   - `verification/verify_interactions.py`: Confirmed visual rendering flow (Landing -> Map -> Experience), audio toggle, and movement interactions.
   - **Final Visual Verification**: Confirmed full 3D scene rendering with terrain, vegetation, rocks, and UI overlay.

@@ -14,20 +14,25 @@ const Rocks = ({ region }) => {
       const z = (Math.random() - 0.5) * 200;
       const pathX = getPathX(z);
 
-      // Random X
-      let x = (Math.random() - 0.5) * 120;
+      // Random X with rejection sampling to avoid path
+      let x, dist;
+      let attempts = 0;
+      do {
+        x = (Math.random() - 0.5) * 120;
+        dist = Math.abs(x - pathX);
+        attempts++;
+      } while (dist < 3 && attempts < 10);
 
-      // Avoid path
-      const dist = Math.abs(x - pathX);
+      // Fallback
       if (dist < 3) {
-         if (x > pathX) x += 3;
-         else x -= 3;
+         if (x > pathX) x = pathX + 3 + Math.random();
+         else x = pathX - 3 - Math.random();
       }
 
       const y = getTerrainHeight(x, z);
 
-      // Random scale 0.4 - 1.0
-      const scale = 0.4 + Math.random() * 0.6;
+      // Random scale 0.5 - 1.5
+      const scale = 0.5 + Math.random() * 1.0;
 
       // Random rotation
       const rotation = [
