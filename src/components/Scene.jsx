@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { SoftShadows } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
 import Controls from './Controls';
 import Terrain from './Terrain';
 import Path from './Path';
@@ -135,6 +135,7 @@ const Scene = ({ region, audioEnabled }) => {
       <EffectComposer disableNormalPass>
         <Bloom luminanceThreshold={0.8} mipmapBlur intensity={0.5} radius={0.6} />
         <Vignette eskil={false} offset={0.1} darkness={0.4} />
+        <Noise opacity={0.02} />
       </EffectComposer>
     </>
   );

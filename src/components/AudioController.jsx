@@ -5,6 +5,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const windNodeRef = useRef(null);
   const windGainRef = useRef(null);
   const windFilterRef = useRef(null);
+  const rustleGainRef = useRef(null);
 
   const [isReady, setIsReady] = useState(false);
 
@@ -53,6 +54,22 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     gain.connect(ctx.destination);
 
     noise.start(t);
+
+    // Add low-frequency "thud" for impact
+    const thudOsc = ctx.createOscillator();
+    thudOsc.type = 'sine';
+    thudOsc.frequency.setValueAtTime(100, t);
+    thudOsc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+
+    const thudGain = ctx.createGain();
+    thudGain.gain.setValueAtTime(0.08, t);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+
+    thudOsc.connect(thudGain);
+    thudGain.connect(ctx.destination);
+
+    thudOsc.start(t);
+    thudOsc.stop(t + 0.15);
   };
 
   // Initialize Audio
@@ -94,9 +111,34 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     windFilterRef.current = windFilter;
     windGainRef.current = windGain;
 
+    // Rustle Sound Setup (Leaves/Trees)
+    const rustleSource = ctx.createBufferSource();
+    rustleSource.buffer = noiseBuffer;
+    rustleSource.loop = true;
+
+    const rustleFilter = ctx.createBiquadFilter();
+    rustleFilter.type = 'highpass';
+    rustleFilter.frequency.value = 1200; // Higher frequency for leaves
+
+    const rustleGain = ctx.createGain();
+    rustleGain.gain.value = 0.0;
+
+    rustleSource.connect(rustleFilter);
+    rustleFilter.connect(rustleGain);
+    rustleGain.connect(ctx.destination);
+
+    rustleSource.start();
+    rustleGainRef.current = rustleGain;
+
     setIsReady(true);
 
     return () => {
+      try {
+        windSource.stop();
+        rustleSource.stop();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
       ctx.close();
       setIsReady(false);
     };
@@ -124,6 +166,14 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       const now = ctx.currentTime;
       windGainRef.current.gain.setTargetAtTime(targetGain, now, 0.5);
       windFilterRef.current.frequency.setTargetAtTime(targetFreq, now, 0.5);
+
+      // Rustle logic (more reactive to wind)
+      if (rustleGainRef.current) {
+        const rustleBase = enabled ? windIntensity * 0.03 : 0;
+        // Rustle happens more at peak wind
+        const rustleTarget = rustleBase * Math.pow(fluctuation, 2);
+        rustleGainRef.current.gain.setTargetAtTime(rustleTarget, now, 0.2);
+      }
 
       animationFrameId = requestAnimationFrame(updateWind);
     };
@@ -155,9 +205,13 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
           const t = ctx.currentTime;
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
+          const panner = ctx.createStereoPanner();
+
+          panner.pan.value = (Math.random() * 2) - 1;
 
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(panner);
+          panner.connect(ctx.destination);
 
           const freq = 2000 + Math.random() * 3000;
           osc.frequency.setValueAtTime(freq, t);

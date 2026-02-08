@@ -14,16 +14,21 @@ const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
   const fol1Ref = useRef();
   const fol2Ref = useRef();
 
+  // Reactive sway based on wind intensity
+  const windIntensity = region.windIntensity || 0.4;
+  const speed = swaySpeed * (0.8 + windIntensity);
+  const amp = 0.02 * (0.5 + windIntensity * 2.0); // More noticeable sway
+
   useFrame((state) => {
     const time = state.clock.elapsedTime;
     // Independent sway per cluster
     if (fol1Ref.current) {
-        fol1Ref.current.rotation.x = Math.sin(time * swaySpeed + swayOffset) * 0.02;
-        fol1Ref.current.rotation.z = Math.cos(time * (swaySpeed * 0.6) + swayOffset) * 0.02;
+        fol1Ref.current.rotation.x = Math.sin(time * speed + swayOffset) * amp;
+        fol1Ref.current.rotation.z = Math.cos(time * (speed * 0.7) + swayOffset) * amp;
     }
     if (fol2Ref.current) {
-        fol2Ref.current.rotation.x = Math.sin(time * swaySpeed + swayOffset + 1) * 0.03;
-        fol2Ref.current.rotation.z = Math.cos(time * (swaySpeed * 0.6) + swayOffset + 1) * 0.03;
+        fol2Ref.current.rotation.x = Math.sin(time * speed + swayOffset + 1) * (amp * 1.5);
+        fol2Ref.current.rotation.z = Math.cos(time * (speed * 0.7) + swayOffset + 1) * (amp * 1.5);
     }
   });
 

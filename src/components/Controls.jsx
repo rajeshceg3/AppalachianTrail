@@ -204,6 +204,7 @@ const Controls = ({ audioRef }) => {
     // Breathing Sway (always active)
     breathRef.current += delta * 0.5;
     const breathY = Math.sin(breathRef.current) * 0.02; // Very subtle up/down
+    const breathZ = Math.cos(breathRef.current * 0.4) * 0.005; // Micro roll
 
     // Head Bob calculation
     const bobAmount = Math.sin(bobRef.current) * 0.05;
@@ -228,7 +229,7 @@ const Controls = ({ audioRef }) => {
     bankRef.current = THREE.MathUtils.lerp(bankRef.current, 0, delta * 5);
 
     // Apply to camera
-    euler.current.z = bankRef.current;
+    euler.current.z = bankRef.current + breathZ;
     camera.quaternion.setFromEuler(euler.current);
   });
 
