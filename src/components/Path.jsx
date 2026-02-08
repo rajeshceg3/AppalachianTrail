@@ -7,7 +7,7 @@ const Path = ({ color }) => {
     // Generate points along the path
     const points = [];
     const step = 0.5; // Sampling density for smoothness
-    for (let z = -100; z <= 100; z += step) {
+    for (let z = -350; z <= 350; z += step) {
       const x = getPathX(z);
       // Lift slightly above terrain to avoid z-fighting
       const y = getTerrainHeight(x, z) + 0.04;
@@ -18,7 +18,7 @@ const Path = ({ color }) => {
 
   const geometry = useMemo(() => {
       // Create a ribbon geometry by expanding the path points
-      const pathPoints = curve.getPoints(400); // Higher segment count for smoothness
+      const pathPoints = curve.getPoints(1400); // Higher segment count for smoothness
       const geo = new THREE.BufferGeometry();
       const vertices = [];
       const uvs = [];

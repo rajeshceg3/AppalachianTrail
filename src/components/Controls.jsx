@@ -20,10 +20,14 @@ const Controls = ({ audioRef }) => {
   const bobRef = useRef(0);
   // Breathing sway state
   const breathRef = useRef(0);
+  // Bank (roll) state
+  const bankRef = useRef(0);
 
   useEffect(() => {
     // Initialize last step position
     lastStepPosition.current.copy(camera.position);
+    // Initialize rotation state
+    euler.current.setFromQuaternion(camera.quaternion);
 
     const onKeyDown = (event) => {
       switch (event.code) {
@@ -76,14 +80,14 @@ const Controls = ({ audioRef }) => {
     };
 
     const handleLook = (deltaX, deltaY) => {
-        euler.current.setFromQuaternion(camera.quaternion);
-
         euler.current.y -= deltaX * 0.002;
         euler.current.x -= deltaY * 0.002;
 
         euler.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, euler.current.x)); // Limit pitch
 
-        camera.quaternion.setFromEuler(euler.current);
+        // Add banking impulse
+        bankRef.current -= deltaX * 0.05;
+        bankRef.current = Math.max(-0.15, Math.min(0.15, bankRef.current));
     };
 
     // Touch Event Handlers
@@ -218,6 +222,14 @@ const Controls = ({ audioRef }) => {
     } else {
         camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, delta * 10);
     }
+
+    // Apply Rotation with Banking
+    // Decay bank
+    bankRef.current = THREE.MathUtils.lerp(bankRef.current, 0, delta * 5);
+
+    // Apply to camera
+    euler.current.z = bankRef.current;
+    camera.quaternion.setFromEuler(euler.current);
   });
 
   return null;

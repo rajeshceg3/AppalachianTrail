@@ -79,7 +79,7 @@ const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
 };
 
 const Vegetation = ({ region }) => {
-  const treeCount = region.environment === 'forest' ? 500 : 200;
+  const treeCount = region.environment === 'forest' ? 2500 : 1000;
 
   const treeData = useMemo(() => {
     const data = [];
@@ -90,9 +90,9 @@ const Vegetation = ({ region }) => {
     while (data.length < treeCount && attempts < maxAttempts) {
       attempts++;
 
-      // Spread trees over a larger area to avoid edge artifacts
-      const z = (Math.random() - 0.5) * 250;
-      const x = (Math.random() - 0.5) * 150;
+      // Spread trees over the full terrain area
+      const z = (Math.random() - 0.5) * 600;
+      const x = (Math.random() - 0.5) * 600;
 
       // 1. Noise-based Clustering
       // Use noise to determine density. Trees grow in groves.
