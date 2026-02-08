@@ -2,7 +2,6 @@ import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Float, SoftShadows } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
-import * as THREE from 'three';
 import Controls from './Controls';
 import Terrain from './Terrain';
 import Path from './Path';
@@ -25,19 +24,21 @@ const Scene = ({ region, audioEnabled }) => {
     }
     if (lightRef.current) {
       // Subtle light intensity shift
-      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.1;
+      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.05;
     }
   });
 
-  // Particles for atmosphere
+  // Particles for atmosphere - Increased range and count for fuller effect
   const particles = useMemo(() => {
-      return Array.from({ length: 40 }).map((_, i) => ({
+      // Create particles in a large volume around the start and potential path
+      // X: -75 to 75, Z: -200 to 200 (covering most of the walkable area)
+      return Array.from({ length: 200 }).map((_, i) => ({
           position: [
-            (Math.random() - 0.5) * 60,
-            2 + Math.random() * 5,
-            (Math.random() - 0.5) * 60
+            (Math.random() - 0.5) * 150,
+            1 + Math.random() * 8, // Height 1 to 9
+            (Math.random() - 0.5) * 400
           ],
-          speed: 0.2 + Math.random() * 0.3
+          speed: 0.2 + Math.random() * 0.5
       }));
   }, [region.id]);
 
