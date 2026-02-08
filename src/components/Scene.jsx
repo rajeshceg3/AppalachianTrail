@@ -53,7 +53,10 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
         if (dx > halfRange) dx -= range;
 
         // Vertical sway
-        const y = particle.y + Math.sin(time * 0.5 + particle.offset) * 0.5;
+        // Anchor Y to camera height to ensure particles are always visible around the player
+        // particle.y is 0-20, so we center it around the camera (e.g., -10 to +10 relative)
+        const relativeY = particle.y - 10;
+        const y = camPos.y + relativeY + Math.sin(time * 0.5 + particle.offset) * 0.5;
 
         dummy.position.set(
             camPos.x + dx,

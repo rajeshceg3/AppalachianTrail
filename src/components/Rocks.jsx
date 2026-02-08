@@ -33,14 +33,21 @@ const Rocks = ({ region }) => {
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
 
-      // Avoid path
-      if (dist < 4) continue;
+      // Probabilistic path avoidance
+      const prob = Math.max(0, Math.min(1, (dist - 3) / 6));
+      if (Math.random() > prob) continue;
 
       // Get terrain height
       const y = getTerrainHeight(x, z);
 
-      // Random scale with more variety
-      const scale = 0.3 + Math.random() * 1.5; // 0.3 to 1.8
+      // Random non-uniform scale for organic look
+      const baseScale = 0.3 + Math.random() * 1.2;
+      // Vary x, y, z scales independently by +/- 20-30%
+      const scale = [
+          baseScale * (0.7 + Math.random() * 0.6),
+          baseScale * (0.7 + Math.random() * 0.6),
+          baseScale * (0.7 + Math.random() * 0.6)
+      ];
 
       // Random rotation
       const rotation = [
@@ -50,8 +57,8 @@ const Rocks = ({ region }) => {
       ];
 
       // Embed in ground to look natural (not floating)
-      // Larger rocks are buried deeper
-      const yPos = y - (0.3 * scale);
+      // Embed based on the Y scale to ensure it's anchored
+      const yPos = y - (0.4 * scale[1]);
 
       data.push({ position: [x, yPos, z], scale, rotation });
     }
@@ -60,13 +67,13 @@ const Rocks = ({ region }) => {
 
   return (
     <Instances range={rockCount}>
-      <dodecahedronGeometry args={[1, 0]} />
+      <icosahedronGeometry args={[1, 0]} />
       <meshStandardMaterial color="#57534e" roughness={0.9} flatShading />
       {rockData.map((d, i) => (
         <Instance
           key={`rock-${i}`}
           position={d.position}
-          scale={[d.scale, d.scale, d.scale]}
+          scale={d.scale}
           rotation={d.rotation}
         />
       ))}

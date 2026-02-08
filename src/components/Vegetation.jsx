@@ -113,15 +113,20 @@ const Vegetation = ({ region }) => {
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
 
-      // Simple rejection: if too close to path, skip.
-      // Do NOT snap to edge (creates walls).
-      if (dist < 6) continue;
+      // Probabilistic rejection for organic edge
+      // Probability increases as distance increases.
+      // 0% chance at dist <= 4, 100% chance at dist >= 14
+      const placementProb = Math.max(0, Math.min(1, (dist - 4) / 10));
+
+      // If random roll is greater than probability, skip this tree
+      if (Math.random() > placementProb) continue;
 
       // 3. Placement
       const y = getTerrainHeight(x, z);
 
-      // Randomized scale and rotation for variety
-      const scale = 0.6 + Math.random() * 1.2; // 0.6 to 1.8
+      // Log-normal scale distribution for natural variety (many small/medium, few large)
+      // Range roughly 0.5 to 2.0
+      const scale = 0.5 * Math.exp(Math.random() * 1.3);
       const rotation = Math.random() * Math.PI * 2;
 
       data.push({ position: [x, y, z], scale, rotation });
@@ -129,21 +134,27 @@ const Vegetation = ({ region }) => {
     return data;
   }, [region.id, treeCount]);
 
-  // Split data into 3 chunks for varied swaying
+  // Split data into 6 chunks for more varied swaying to break synchronization
   const clusters = useMemo(() => {
-    const chunkSize = Math.ceil(treeData.length / 3);
+    const chunkSize = Math.ceil(treeData.length / 6);
     return [
         treeData.slice(0, chunkSize),
         treeData.slice(chunkSize, chunkSize * 2),
-        treeData.slice(chunkSize * 2)
+        treeData.slice(chunkSize * 2, chunkSize * 3),
+        treeData.slice(chunkSize * 3, chunkSize * 4),
+        treeData.slice(chunkSize * 4, chunkSize * 5),
+        treeData.slice(chunkSize * 5)
     ];
   }, [treeData]);
 
   return (
     <>
       <TreeCluster data={clusters[0]} region={region} swayOffset={0} swaySpeed={0.5} />
-      <TreeCluster data={clusters[1]} region={region} swayOffset={2} swaySpeed={0.4} />
-      <TreeCluster data={clusters[2]} region={region} swayOffset={4} swaySpeed={0.6} />
+      <TreeCluster data={clusters[1]} region={region} swayOffset={2.1} swaySpeed={0.4} />
+      <TreeCluster data={clusters[2]} region={region} swayOffset={4.2} swaySpeed={0.6} />
+      <TreeCluster data={clusters[3]} region={region} swayOffset={1.1} swaySpeed={0.45} />
+      <TreeCluster data={clusters[4]} region={region} swayOffset={3.3} swaySpeed={0.55} />
+      <TreeCluster data={clusters[5]} region={region} swayOffset={5.4} swaySpeed={0.35} />
     </>
   );
 };
