@@ -22,8 +22,8 @@ const noise2D = createNoise2D(random);
  * Creates a winding, natural-looking path.
  */
 export const getPathX = (z) => {
-  // Combine two sine waves for a non-repetitive winding path
-  return Math.sin(z * 0.05) * 5 + Math.sin(z * 0.02) * 10;
+  // Combine multiple sine waves for a non-repetitive winding path
+  return Math.sin(z * 0.05) * 5 + Math.sin(z * 0.02) * 10 + Math.sin(z * 0.013) * 2;
 };
 
 /**
