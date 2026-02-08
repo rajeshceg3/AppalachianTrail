@@ -9,7 +9,7 @@ const noise2D = createNoise2D(Math.random);
 const Rocks = ({ region }) => {
   // More rocks in rocky regions (Maine, New England)
   const isRocky = region.id === 'maine' || region.id === 'new-england';
-  const rockCount = isRocky ? 250 : 80;
+  const rockCount = isRocky ? 1000 : 300;
 
   const rockData = useMemo(() => {
     const data = [];
@@ -19,9 +19,9 @@ const Rocks = ({ region }) => {
     while (data.length < rockCount && attempts < maxAttempts) {
       attempts++;
 
-      // Spread along Z and X
-      const z = (Math.random() - 0.5) * 250;
-      const x = (Math.random() - 0.5) * 150;
+      // Spread rocks over the full terrain area
+      const z = (Math.random() - 0.5) * 600;
+      const x = (Math.random() - 0.5) * 600;
 
       // Noise clustering for natural rock formations
       // Higher frequency (0.1) than trees creates smaller, tighter clusters

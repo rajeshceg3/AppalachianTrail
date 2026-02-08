@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Float, SoftShadows } from '@react-three/drei';
+import { SoftShadows } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import Controls from './Controls';
 import Terrain from './Terrain';
@@ -9,6 +10,74 @@ import AudioController from './AudioController';
 import Vegetation from './Vegetation';
 import Rocks from './Rocks';
 import { getTerrainHeight } from '../utils/terrain';
+
+const AtmosphericParticles = ({ color, count = 2000 }) => {
+  const meshRef = useRef();
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  // Initial random positions relative to a 100x100 box
+  const particles = useMemo(() => {
+    return Array.from({ length: count }).map(() => ({
+      x: (Math.random() - 0.5) * 100,
+      y: Math.random() * 20, // Height 0 to 20
+      z: (Math.random() - 0.5) * 100,
+      speed: 0.2 + Math.random() * 0.5,
+      offset: Math.random() * 100
+    }));
+  }, [count]);
+
+  useFrame((state) => {
+    if (!meshRef.current) return;
+    const time = state.clock.elapsedTime;
+    const camPos = state.camera.position;
+
+    particles.forEach((particle, i) => {
+        // Calculate position relative to camera to create infinite field
+        // Box size 200x200 to ensure particles don't pop in/out visibly within fog
+        const range = 200;
+        const halfRange = range / 2;
+
+        // Move particle along Z based on time (wind direction)
+        let z = particle.z + time * particle.speed;
+
+        // Wrap Z relative to camera
+        // (z - camPos.z) gives distance. Modulo wraps it.
+        let dz = (z - camPos.z) % range;
+        // Adjust to be centered around 0 (-50 to 50)
+        if (dz < -halfRange) dz += range;
+        if (dz > halfRange) dz -= range;
+
+        // Wrap X relative to camera
+        let dx = (particle.x - camPos.x) % range;
+        if (dx < -halfRange) dx += range;
+        if (dx > halfRange) dx -= range;
+
+        // Vertical sway
+        const y = particle.y + Math.sin(time * 0.5 + particle.offset) * 0.5;
+
+        dummy.position.set(
+            camPos.x + dx,
+            y,
+            camPos.z + dz
+        );
+
+        // Scale pulse for "breathing" effect
+        const scale = 1.0 + Math.sin(time * 2 + particle.offset) * 0.2;
+        dummy.scale.setScalar(scale);
+
+        dummy.updateMatrix();
+        meshRef.current.setMatrixAt(i, dummy.matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[null, null, count]}>
+      <sphereGeometry args={[0.04, 6, 6]} />
+      <meshBasicMaterial color={color} transparent opacity={0.3} />
+    </instancedMesh>
+  );
+};
 
 const Scene = ({ region, audioEnabled }) => {
   const audioRef = useRef(null);
@@ -27,20 +96,6 @@ const Scene = ({ region, audioEnabled }) => {
       lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.05;
     }
   });
-
-  // Particles for atmosphere - Increased range and count for fuller effect
-  const particles = useMemo(() => {
-      // Create particles in a large volume around the start and potential path
-      // X: -75 to 75, Z: -200 to 200 (covering most of the walkable area)
-      return Array.from({ length: 200 }).map((_, i) => ({
-          position: [
-            (Math.random() - 0.5) * 150,
-            1 + Math.random() * 8, // Height 1 to 9
-            (Math.random() - 0.5) * 400
-          ],
-          speed: 0.2 + Math.random() * 0.5
-      }));
-  }, [region.id]);
 
   return (
     <>
@@ -69,20 +124,7 @@ const Scene = ({ region, audioEnabled }) => {
       <Rocks region={region} />
 
       {/* Atmospheric particles */}
-      {particles.map((props, i) => (
-        <Float
-          key={i}
-          speed={props.speed}
-          rotationIntensity={0.5}
-          floatIntensity={0.5}
-          position={props.position}
-        >
-          <mesh>
-            <sphereGeometry args={[0.04, 6, 6]} />
-            <meshBasicMaterial color={region.particles} transparent opacity={0.3} />
-          </mesh>
-        </Float>
-      ))}
+      <AtmosphericParticles color={region.particles} />
 
       {/* Hero moment marker - positioned relative to terrain */}
       <mesh position={[0, getTerrainHeight(0, -40) + 0.1, -40]}>
