@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { useThree } from '@react-three/fiber';
 
 const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const audioContextRef = useRef(null);
+  const { camera } = useThree(); // Access camera for height-based modulation
 
   // Stereo wind references
   const windLRef = useRef(null); // { src, filter, gain }
@@ -9,6 +11,9 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
   const rustleGainRef = useRef(null);
   const insectsGainRef = useRef(null);
+
+  // Buffers
+  const gravelBufferRef = useRef(null);
 
   const [isReady, setIsReady] = useState(false);
 
@@ -25,7 +30,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   }));
 
   const triggerFootstep = () => {
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current || !gravelBufferRef.current) return;
     const ctx = audioContextRef.current;
 
     if (ctx.state === 'suspended') {
@@ -33,46 +38,44 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     }
 
     const t = ctx.currentTime;
-    const bufferSize = ctx.sampleRate * 0.1; // 100ms
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
 
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 600 + Math.random() * 200;
-    filter.Q.value = 1.0;
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.05, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-
-    noise.start(t);
-
-    // Add low-frequency "thud" for impact
+    // 1. Low Thud (Impact)
     const thudOsc = ctx.createOscillator();
     thudOsc.type = 'sine';
-    thudOsc.frequency.setValueAtTime(100, t);
-    thudOsc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+    thudOsc.frequency.setValueAtTime(80, t);
+    thudOsc.frequency.exponentialRampToValueAtTime(30, t + 0.1);
 
     const thudGain = ctx.createGain();
-    thudGain.gain.setValueAtTime(0.08, t);
-    thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    thudGain.gain.setValueAtTime(0.15, t); // Slightly louder
+    thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
 
     thudOsc.connect(thudGain);
     thudGain.connect(ctx.destination);
 
     thudOsc.start(t);
     thudOsc.stop(t + 0.15);
+
+    // 2. Gravel Crunch (High Frequency Noise)
+    const crunchSrc = ctx.createBufferSource();
+    crunchSrc.buffer = gravelBufferRef.current;
+
+    // Randomize playback rate for variety
+    crunchSrc.playbackRate.value = 0.8 + Math.random() * 0.4;
+
+    const crunchFilter = ctx.createBiquadFilter();
+    crunchFilter.type = 'bandpass';
+    crunchFilter.frequency.value = 1200 + Math.random() * 400;
+    crunchFilter.Q.value = 1.0;
+
+    const crunchGain = ctx.createGain();
+    crunchGain.gain.setValueAtTime(0.08, t);
+    crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+
+    crunchSrc.connect(crunchFilter);
+    crunchFilter.connect(crunchGain);
+    crunchGain.connect(ctx.destination);
+
+    crunchSrc.start(t);
   };
 
   // Initialize Audio
@@ -81,7 +84,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     const ctx = new AudioContext();
     audioContextRef.current = ctx;
 
-    // Create Noise Buffer (shared)
+    // Create Noise Buffer (shared for wind/ambience)
     const bufferSize = 2 * ctx.sampleRate;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
@@ -93,6 +96,15 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       lastOut = output[i];
       output[i] *= 3.5;
     }
+
+    // Create Gravel Buffer (White noise for crisp crunch)
+    const gSize = ctx.sampleRate * 0.2; // 200ms
+    const gBuffer = ctx.createBuffer(1, gSize, ctx.sampleRate);
+    const gData = gBuffer.getChannelData(0);
+    for(let i=0; i<gSize; i++) {
+        gData[i] = (Math.random() * 2 - 1) * 0.8; // Slightly quieter base
+    }
+    gravelBufferRef.current = gBuffer;
 
     // Helper to create a wind layer
     const createWindLayer = (pan) => {
@@ -121,22 +133,33 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     windRRef.current = createWindLayer(0.6);
 
 
-    // Rustle Sound Setup (Leaves/Trees) - Center
-    const rustleSource = ctx.createBufferSource();
-    rustleSource.buffer = noiseBuffer;
-    rustleSource.loop = true;
+    // Rustle Sound Setup (Leaves/Trees) - Stereo
+    // Use 2 sources for width
+    const createRustleLayer = (pan) => {
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer;
+        src.loop = true;
 
-    const rustleFilter = ctx.createBiquadFilter();
-    rustleFilter.type = 'highpass';
-    rustleFilter.frequency.value = 1200;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1200;
 
-    const rustleGain = ctx.createGain();
-    rustleGain.gain.value = 0.0;
+        const gain = ctx.createGain();
+        gain.gain.value = 0.0;
 
-    rustleSource.connect(rustleFilter);
-    rustleFilter.connect(rustleGain);
-    rustleGain.connect(ctx.destination);
-    rustleSource.start();
+        const panner = ctx.createStereoPanner();
+        panner.pan.value = pan;
+
+        src.connect(filter).connect(gain).connect(panner).connect(ctx.destination);
+        src.start();
+        return gain;
+    }
+
+    // We'll control one gain ref but apply to both? Or simple center channel?
+    // Let's keep it simple: Just one gain ref controlling a center source for now,
+    // or maybe create a stereo effect here too.
+    // The previous implementation was mono (center). Let's make it stereo-ish.
+    const rustleGain = createRustleLayer(0); // Center for now to avoid complexity
     rustleGainRef.current = rustleGain;
 
     // Insects / Nature Ambience
@@ -161,12 +184,9 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       try {
         windLRef.current?.src.stop();
         windRRef.current?.src.stop();
-        rustleSource.stop();
         insectSource.stop();
-      } catch (e) {
-        // Ignore errors if already stopped
-      }
-      ctx.close();
+        ctx.close();
+      } catch (e) {}
       setIsReady(false);
     };
   }, []);
@@ -181,45 +201,56 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     const updateAudio = () => {
       const time = Date.now() / 1000;
       const fluctuation = Math.sin(time * 0.5) * 0.5 + 0.5;
-      const windIntensity = region.windIntensity || 0.5;
+
+      // Calculate effective wind intensity based on height
+      const camY = camera.position.y;
+      // Base assumption: Terrain is roughly 0-20. Peaks might be 50.
+      // Boost wind as we go up.
+      // At Y=0, factor is 1.0. At Y=50, factor is 2.0.
+      const heightFactor = 1.0 + (Math.max(0, camY) / 50.0);
+
+      let windIntensity = (region.windIntensity || 0.5) * heightFactor;
+      // Clamp to reasonable max
+      windIntensity = Math.min(1.2, windIntensity);
+
       const now = ctx.currentTime;
 
       // Stereo Wind Updates
-      // We offset the fluctuation for L and R to create movement
       const flucL = Math.sin(time * 0.4) * 0.5 + 0.5;
-      const flucR = Math.sin(time * 0.4 + 2.0) * 0.5 + 0.5; // Phase shifted
+      const flucR = Math.sin(time * 0.4 + 2.0) * 0.5 + 0.5;
 
       const baseGain = enabled ? windIntensity * 0.05 : 0;
 
       if (windLRef.current) {
          const targetGainL = baseGain * (0.5 + 0.5 * flucL);
-         const targetFreqL = 200 + (windIntensity * 600) * flucL;
+         // Wind howls more (higher freq) at intensity
+         const targetFreqL = 200 + (windIntensity * 800) * flucL;
          windLRef.current.gain.gain.setTargetAtTime(targetGainL, now, 0.5);
          windLRef.current.filter.frequency.setTargetAtTime(targetFreqL, now, 0.5);
       }
 
       if (windRRef.current) {
          const targetGainR = baseGain * (0.5 + 0.5 * flucR);
-         const targetFreqR = 200 + (windIntensity * 600) * flucR;
+         const targetFreqR = 200 + (windIntensity * 800) * flucR;
          windRRef.current.gain.gain.setTargetAtTime(targetGainR, now, 0.5);
          windRRef.current.filter.frequency.setTargetAtTime(targetFreqR, now, 0.5);
       }
 
       // Rustle logic
       if (rustleGainRef.current) {
+        // Rustle increases with wind, but maybe less at very high altitudes (above treeline)?
+        // Assuming treeline is around 40?
+        // Let's just keep it coupled to windIntensity for now.
         const rustleBase = enabled ? windIntensity * 0.03 : 0;
         const rustleTarget = rustleBase * Math.pow(fluctuation, 2);
         rustleGainRef.current.gain.setTargetAtTime(rustleTarget, now, 0.2);
       }
 
       // Insects logic
-      // More insects if low wind intensity? Or based on region?
-      // Let's say insects are constant but subtle, fading out in high wind
       if (insectsGainRef.current) {
           const insectBase = enabled ? 0.015 : 0;
-          // Fade out insects as wind increases
-          const windSuppress = Math.max(0, 1.0 - windIntensity);
-          // Pulse insects
+          // Fade out insects as wind increases (realism)
+          const windSuppress = Math.max(0, 1.0 - windIntensity * 0.8);
           const insectPulse = 0.8 + Math.sin(time * 8) * 0.2;
 
           const targetInsect = insectBase * windSuppress * insectPulse;
@@ -234,9 +265,9 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isReady, region, enabled]);
+  }, [isReady, region, enabled, camera]); // Added camera to deps, though it's stable
 
-  // Birds Logic (kept same but ensured panner is stereo)
+  // Birds Logic
   useEffect(() => {
     if (!isReady || !audioContextRef.current) return;
 
@@ -248,8 +279,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
       if (enabled) {
         const birdActivity = region.birdActivity || 0.3;
+        // Reduce birds in high wind
+        const windIntensity = region.windIntensity || 0.5;
+        const probability = birdActivity * (1.0 - windIntensity * 0.5);
 
-        if (Math.random() < birdActivity) {
+        if (Math.random() < probability) {
           const ctx = audioContextRef.current;
           if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
@@ -280,7 +314,6 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       timeoutId = setTimeout(playBird, nextDelay);
     };
 
-    // Initial delay
     timeoutId = setTimeout(playBird, 2000);
 
     return () => {
