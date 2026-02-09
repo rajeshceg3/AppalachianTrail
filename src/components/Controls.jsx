@@ -4,10 +4,16 @@ import * as THREE from 'three';
 import { getTerrainHeight } from '../utils/terrain';
 
 const Controls = ({ audioRef }) => {
-  const { camera, gl } = useThree();
+  const { camera } = useThree();
   const moveForward = useRef(false);
   const moveBackward = useRef(false);
-  const euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+
+  // Camera Rotation State
+  // targetEuler tracks the desired rotation from input
+  // currentEuler tracks the actual smoothed camera rotation
+  const targetEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+  const currentEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+
   const velocity = useRef(new THREE.Vector3());
   const isInitialized = useRef(false);
 
@@ -27,8 +33,10 @@ const Controls = ({ audioRef }) => {
   useEffect(() => {
     // Initialize last step position
     lastStepPosition.current.copy(camera.position);
-    // Initialize rotation state
-    euler.current.setFromQuaternion(camera.quaternion);
+
+    // Initialize rotation state from current camera
+    currentEuler.current.setFromQuaternion(camera.quaternion);
+    targetEuler.current.copy(currentEuler.current);
 
     const onKeyDown = (event) => {
       switch (event.code) {
@@ -81,12 +89,13 @@ const Controls = ({ audioRef }) => {
     };
 
     const handleLook = (deltaX, deltaY) => {
-        euler.current.y -= deltaX * 0.002;
-        euler.current.x -= deltaY * 0.002;
+        // Update target rotation immediately
+        targetEuler.current.y -= deltaX * 0.002;
+        targetEuler.current.x -= deltaY * 0.002;
 
-        euler.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, euler.current.x)); // Limit pitch
+        targetEuler.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, targetEuler.current.x)); // Limit pitch
 
-        // Add banking impulse to target, not directly to bank
+        // Add banking impulse to target
         targetBankRef.current -= deltaX * 0.05;
         targetBankRef.current = Math.max(-0.15, Math.min(0.15, targetBankRef.current));
     };
@@ -135,13 +144,9 @@ const Controls = ({ audioRef }) => {
 
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
-
-    // Mouse listeners on canvas (gl.domElement) usually better, but document covers full screen
     document.addEventListener('mousedown', onMouseDown);
     document.addEventListener('mouseup', onMouseUp);
     document.addEventListener('mousemove', onMouseMoveDrag);
-
-    // Touch listeners
     document.addEventListener('touchstart', onTouchStart, { passive: false });
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
@@ -153,7 +158,6 @@ const Controls = ({ audioRef }) => {
       document.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('mousemove', onMouseMoveDrag);
-
       document.removeEventListener('touchstart', onTouchStart);
       document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
@@ -161,6 +165,15 @@ const Controls = ({ audioRef }) => {
   }, [camera, audioRef]);
 
   useFrame((state, delta) => {
+    // --- Smooth Look Rotation ---
+    // Interpolate current rotation towards target rotation
+    // Use a damping factor for "weight"
+    const lookDamping = 10.0;
+    currentEuler.current.x = THREE.MathUtils.lerp(currentEuler.current.x, targetEuler.current.x, delta * lookDamping);
+    currentEuler.current.y = THREE.MathUtils.lerp(currentEuler.current.y, targetEuler.current.y, delta * lookDamping);
+
+
+    // --- Movement Logic ---
     // Calculate Forward vector (ignoring Y)
     const forward = new THREE.Vector3(0, 0, -1);
     forward.applyQuaternion(camera.quaternion);
@@ -229,11 +242,13 @@ const Controls = ({ audioRef }) => {
     // Decay target bank
     targetBankRef.current = THREE.MathUtils.lerp(targetBankRef.current, 0, delta * 5);
     // Smoothly interpolate actual bank towards target
-    bankRef.current = THREE.MathUtils.lerp(bankRef.current, targetBankRef.current, delta * 10);
+    bankRef.current = THREE.MathUtils.lerp(bankRef.current, targetBankRef.current, delta * 5); // Slower bank smoothing
 
-    // Apply to camera
-    euler.current.z = bankRef.current + breathZ;
-    camera.quaternion.setFromEuler(euler.current);
+    // Apply banking (Z) to currentEuler
+    currentEuler.current.z = bankRef.current + breathZ;
+
+    // Apply final rotation to camera
+    camera.quaternion.setFromEuler(currentEuler.current);
   });
 
   return null;

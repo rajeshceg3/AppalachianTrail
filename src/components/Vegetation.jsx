@@ -2,12 +2,10 @@ import React, { useMemo, useRef } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { createNoise2D } from 'simplex-noise';
+import * as THREE from 'three';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
 
 // Create a seeded noise instance for consistent vegetation patterns
-// We can use a simple random or a fixed seed. Here we use Math.random for variety on load,
-// but for a fixed "world" feel we might want a seed.
-// Since the previous implementation used Math.random(), we'll stick to that but structured.
 const noise2D = createNoise2D(Math.random);
 
 const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
@@ -52,13 +50,14 @@ const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
       <group ref={fol1Ref}>
         <Instances range={data.length}>
             <coneGeometry args={[1.0, 2.0, 7]} />
-            <meshStandardMaterial color={region.treeColor1} roughness={0.8} />
+            <meshStandardMaterial color="#ffffff" roughness={0.8} />
             {data.map((d, i) => (
             <Instance
                 key={`fol1-${i}`}
                 position={[d.position[0], d.position[1] + 1.5 * d.scale, d.position[2]]}
                 scale={[d.scale, d.scale, d.scale]}
                 rotation={[0, d.rotation, 0]}
+                color={d.color1}
             />
             ))}
         </Instances>
@@ -68,13 +67,14 @@ const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
       <group ref={fol2Ref}>
         <Instances range={data.length}>
             <coneGeometry args={[0.7, 1.5, 7]} />
-            <meshStandardMaterial color={region.treeColor2} roughness={0.8} />
+            <meshStandardMaterial color="#ffffff" roughness={0.8} />
             {data.map((d, i) => (
             <Instance
                 key={`fol2-${i}`}
                 position={[d.position[0], d.position[1] + 2.5 * d.scale, d.position[2]]}
                 scale={[d.scale, d.scale, d.scale]}
                 rotation={[0, d.rotation + 1, 0]}
+                color={d.color2}
             />
             ))}
         </Instances>
@@ -91,6 +91,9 @@ const Vegetation = ({ region }) => {
     let attempts = 0;
     // Safety limit to prevent infinite loops
     const maxAttempts = treeCount * 10;
+
+    const baseC1 = new THREE.Color(region.treeColor1);
+    const baseC2 = new THREE.Color(region.treeColor2);
 
     while (data.length < treeCount && attempts < maxAttempts) {
       attempts++;
@@ -129,10 +132,23 @@ const Vegetation = ({ region }) => {
       const scale = 0.5 * Math.exp(Math.random() * 1.3);
       const rotation = Math.random() * Math.PI * 2;
 
-      data.push({ position: [x, y, z], scale, rotation });
+      // Color variation
+      const mix = Math.random();
+      const variance = 0.9 + Math.random() * 0.2; // 0.9 to 1.1 brightness
+
+      const c1 = baseC1.clone().lerp(baseC2, mix * 0.3).multiplyScalar(variance);
+      const c2 = baseC2.clone().lerp(baseC1, mix * 0.3).multiplyScalar(variance);
+
+      data.push({
+          position: [x, y, z],
+          scale,
+          rotation,
+          color1: c1,
+          color2: c2
+      });
     }
     return data;
-  }, [region.id, treeCount]);
+  }, [region.id, treeCount, region.treeColor1, region.treeColor2]);
 
   // Split data into 6 chunks for more varied swaying to break synchronization
   const clusters = useMemo(() => {

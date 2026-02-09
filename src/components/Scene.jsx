@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { SoftShadows } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette, Noise, DepthOfField } from '@react-three/postprocessing';
 import Controls from './Controls';
 import Terrain from './Terrain';
 import Path from './Path';
@@ -22,7 +22,8 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
       y: Math.random() * 20, // Height 0 to 20
       z: (Math.random() - 0.5) * 100,
       speed: 0.2 + Math.random() * 0.5,
-      offset: Math.random() * 100
+      offset: Math.random() * 100,
+      baseScale: 0.5 + Math.random() * 1.5 // Varied size for organic look
     }));
   }, [count]);
 
@@ -64,8 +65,8 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
             camPos.z + dz
         );
 
-        // Scale pulse for "breathing" effect
-        const scale = 1.0 + Math.sin(time * 2 + particle.offset) * 0.2;
+        // Scale pulse for "breathing" effect + base scale variation
+        const scale = particle.baseScale * (1.0 + Math.sin(time * 2 + particle.offset) * 0.2);
         dummy.scale.setScalar(scale);
 
         dummy.updateMatrix();
@@ -88,12 +89,22 @@ const Scene = ({ region, audioEnabled }) => {
   const lightRef = useRef();
 
   // Dynamic atmosphere
-  useFrame(({ clock }) => {
-    const time = clock.getElapsedTime();
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    const camY = state.camera.position.y;
+
     if (fogRef.current) {
       // Breathing fog density
-      fogRef.current.density = region.fogDensity + Math.sin(time * 0.5) * (region.fogDensity * 0.1);
+      let density = region.fogDensity + Math.sin(time * 0.5) * (region.fogDensity * 0.1);
+
+      // Height modulation: Less fog as you go up (climbing out of the valley)
+      // Assume typical camera heights are 5-50.
+      // Decrease density by up to 60% at height 30 relative to base 5.
+      const heightFactor = Math.max(0.4, 1.0 - (Math.max(0, camY - 5) * 0.025));
+
+      fogRef.current.density = density * heightFactor;
     }
+
     if (lightRef.current) {
       // Subtle light intensity shift
       lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.05;
@@ -136,6 +147,12 @@ const Scene = ({ region, audioEnabled }) => {
       </mesh>
 
       <EffectComposer disableNormalPass>
+        <DepthOfField
+            focusDistance={0.02} /* Focus approx 20 units away (assuming far=1000) */
+            focalLength={0.15} /* Focal length */
+            bokehScale={2} /* Blur intensity */
+            height={480}
+        />
         <Bloom luminanceThreshold={0.8} mipmapBlur intensity={0.5} radius={0.6} />
         <Vignette eskil={false} offset={0.1} darkness={0.4} />
         <Noise opacity={0.02} />
