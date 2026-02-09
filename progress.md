@@ -35,6 +35,13 @@
   - Refined object placement logic (rejection sampling) to eliminate artificial linear boundaries near the path.
   - Implemented multi-phase wind animation for vegetation to prevent synchronized swaying.
   - Added complexity to path winding algorithm for more natural curvature.
+  - **Advanced Organic Detail**:
+    - Implemented multi-octave noise terrain for realistic hills and micro-detail.
+    - Replaced periodic sine waves with non-integer frequency path generation.
+    - Added noise-based clustering (groves) for vegetation and rocks.
+    - Implemented probabilistic path avoidance and log-normal scaling for natural variation.
+    - Added organic camera movement (banking, head bob, breathing).
+    - Added atmospheric particles with wind wrapping and vertical anchoring.
 - **Verification**:
   - `verification/verify_interactions.py`: Confirmed visual rendering flow (Landing -> Map -> Experience), audio toggle, and movement interactions.
   - **Final Visual Verification**: Confirmed full 3D scene rendering with terrain, vegetation, rocks, and UI overlay.
