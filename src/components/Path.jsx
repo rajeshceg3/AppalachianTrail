@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
-import { getPathX, getTerrainHeight } from '../utils/terrain';
+import { getPathX, getTerrainHeight, getTerrainNormal } from '../utils/terrain';
 
 const Path = ({ color }) => {
   const curve = useMemo(() => {
@@ -10,7 +10,8 @@ const Path = ({ color }) => {
     for (let z = -350; z <= 350; z += step) {
       const x = getPathX(z);
       // Lift slightly above terrain to avoid z-fighting
-      const y = getTerrainHeight(x, z) + 0.04;
+      // Reduced offset significantly because we use polygonOffset in material
+      const y = getTerrainHeight(x, z) + 0.005;
       points.push(new THREE.Vector3(x, y, z));
     }
     return new THREE.CatmullRomCurve3(points);
@@ -40,10 +41,10 @@ const Path = ({ color }) => {
             tangent = new THREE.Vector3().subVectors(pathPoints[i+1], pathPoints[i-1]).normalize();
         }
 
-        // Perpendicular vector (assuming UP is Y)
-        // This keeps the path flat relative to the ground plane
-        const up = new THREE.Vector3(0, 1, 0);
-        const perp = new THREE.Vector3().crossVectors(tangent, up).normalize().multiplyScalar(width / 2);
+        // Use terrain normal to orient the path ribbon (banking)
+        const normal = getTerrainNormal(point.x, point.z);
+        // Calculate perpendicular vector aligned with terrain slope
+        const perp = new THREE.Vector3().crossVectors(tangent, normal).normalize().multiplyScalar(width / 2);
 
         // Left and Right vertices
         const left = new THREE.Vector3().addVectors(point, perp);
@@ -80,6 +81,9 @@ const Path = ({ color }) => {
         color={color}
         roughness={0.9}
         side={THREE.DoubleSide}
+        polygonOffset
+        polygonOffsetFactor={-1}
+        polygonOffsetUnits={-1}
       />
     </mesh>
   );

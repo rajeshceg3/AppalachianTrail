@@ -15,6 +15,21 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
+  // Generate a soft particle texture
+  const particleTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const context = canvas.getContext('2d');
+    const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 32, 32);
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }, []);
+
   // Initial random positions relative to a 100x100 box
   const particles = useMemo(() => {
     return Array.from({ length: count }).map(() => ({
@@ -65,9 +80,14 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
             camPos.z + dz
         );
 
+        // Billboard: always face camera
+        dummy.quaternion.copy(state.camera.quaternion);
+
         // Scale pulse for "breathing" effect + base scale variation
+        // Desynchronize breathing with particle.offset
         const scale = particle.baseScale * (1.0 + Math.sin(time * 2 + particle.offset) * 0.2);
-        dummy.scale.setScalar(scale);
+        // Multiply by 0.1 because plane is 1x1, spheres were 0.04 radius (0.08 diameter)
+        dummy.scale.setScalar(scale * 0.1);
 
         dummy.updateMatrix();
         meshRef.current.setMatrixAt(i, dummy.matrix);
@@ -77,8 +97,14 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
 
   return (
     <instancedMesh ref={meshRef} args={[null, null, count]}>
-      <sphereGeometry args={[0.04, 6, 6]} />
-      <meshBasicMaterial color={color} transparent opacity={0.3} />
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
+        color={color}
+        map={particleTexture}
+        transparent
+        opacity={0.3}
+        depthWrite={false}
+      />
     </instancedMesh>
   );
 };
@@ -119,7 +145,7 @@ const Scene = ({ region, audioEnabled }) => {
       lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
 
       // Intensity pulse + slow increase
-      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.05 + (warmProgress * 0.2);
+      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02 + (warmProgress * 0.2);
     }
   });
 
@@ -151,12 +177,6 @@ const Scene = ({ region, audioEnabled }) => {
 
       {/* Atmospheric particles */}
       <AtmosphericParticles color={region.particles} />
-
-      {/* Hero moment marker - positioned relative to terrain */}
-      <mesh position={[0, getTerrainHeight(0, -40) + 0.1, -40]}>
-        <cylinderGeometry args={[4, 4, 0.1, 32]} />
-        <meshBasicMaterial color="#fffbeb" transparent opacity={0.1} />
-      </mesh>
 
       <EffectComposer disableNormalPass>
         <DepthOfField

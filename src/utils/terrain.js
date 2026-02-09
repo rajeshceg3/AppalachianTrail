@@ -1,4 +1,5 @@
 import { createNoise2D } from 'simplex-noise';
+import { Vector3 } from 'three';
 
 // Simple seeded random function (Mulberry32)
 // This ensures that the terrain is generated identically every time,
@@ -140,4 +141,25 @@ export const getTerrainHeight = (x, z) => {
 
   // Final mix
   return (y * blend) + (finalPathHeight * (1 - blend));
+};
+
+/**
+ * Calculates the terrain normal at a given (x, z) coordinate.
+ * Used for aligning objects (like the path) to the ground slope.
+ */
+export const getTerrainNormal = (x, z) => {
+  const eps = 0.1;
+  const hL = getTerrainHeight(x - eps, z);
+  const hR = getTerrainHeight(x + eps, z);
+  const hD = getTerrainHeight(x, z - eps);
+  const hU = getTerrainHeight(x, z + eps);
+
+  // Vector along X axis
+  const v1 = new Vector3(2 * eps, hR - hL, 0);
+  // Vector along Z axis
+  const v2 = new Vector3(0, hU - hD, 2 * eps);
+
+  // Cross product (Z cross X gives Y-up)
+  const normal = new Vector3().crossVectors(v2, v1).normalize();
+  return normal;
 };
