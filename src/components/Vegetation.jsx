@@ -1,38 +1,47 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useLayoutEffect } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { createNoise2D } from 'simplex-noise';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
+import { applyWindShader } from '../materials/WindShader';
 
 // Create a seeded noise instance for consistent vegetation patterns
 const noise2D = createNoise2D(Math.random);
 
-const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
-  const fol1Ref = useRef();
-  const fol2Ref = useRef();
-
+const TreeCluster = ({ data, region, swaySpeed }) => {
   // Reactive sway based on wind intensity
   const windIntensity = region.windIntensity || 0.4;
   const speed = swaySpeed * (0.8 + windIntensity);
-  const amp = 0.02 * (0.5 + windIntensity * 2.0); // More noticeable sway
+  const amp = 0.2 * (0.5 + windIntensity * 2.0); // Magnitude for shader (0.2 is reasonable for vertex displacement)
+
+  // Create materials with wind shader
+  const foliageMaterial1 = useMemo(() => {
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
+      applyWindShader(m, speed, amp);
+      return m;
+  }, [speed, amp]);
+
+  const foliageMaterial2 = useMemo(() => {
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
+      applyWindShader(m, speed, amp * 1.5); // Top layer moves more
+      return m;
+  }, [speed, amp]);
 
   useFrame((state) => {
     const time = state.clock.elapsedTime;
-    // Independent sway per cluster
-    if (fol1Ref.current) {
-        fol1Ref.current.rotation.x = Math.sin(time * speed + swayOffset) * amp;
-        fol1Ref.current.rotation.z = Math.cos(time * (speed * 0.7) + swayOffset) * amp;
+
+    if (foliageMaterial1.userData.update) {
+        foliageMaterial1.userData.update(time);
     }
-    if (fol2Ref.current) {
-        fol2Ref.current.rotation.x = Math.sin(time * speed + swayOffset + 1) * (amp * 1.5);
-        fol2Ref.current.rotation.z = Math.cos(time * (speed * 0.7) + swayOffset + 1) * (amp * 1.5);
+    if (foliageMaterial2.userData.update) {
+        foliageMaterial2.userData.update(time);
     }
   });
 
   return (
     <group>
-      {/* Trunks - Static relative to sway, but part of the cluster */}
+      {/* Trunks - Static */}
       <Instances range={data.length}>
         <cylinderGeometry args={[0.15, 0.25, 1, 5]} />
         <meshStandardMaterial color="#5c4033" roughness={0.9} />
@@ -47,38 +56,32 @@ const TreeCluster = ({ data, region, swayOffset, swaySpeed }) => {
       </Instances>
 
       {/* Foliage Bottom Layer */}
-      <group ref={fol1Ref}>
-        <Instances range={data.length}>
-            <coneGeometry args={[1.0, 2.0, 7]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.8} />
-            {data.map((d, i) => (
-            <Instance
-                key={`fol1-${i}`}
-                position={[d.position[0], d.position[1] + 1.5 * d.scale, d.position[2]]}
-                scale={[d.scale, d.scale, d.scale]}
-                rotation={[0, d.rotation, 0]}
-                color={d.color1}
-            />
-            ))}
-        </Instances>
-      </group>
+      <Instances range={data.length} material={foliageMaterial1}>
+        <coneGeometry args={[1.0, 2.0, 7]} />
+        {data.map((d, i) => (
+        <Instance
+            key={`fol1-${i}`}
+            position={[d.position[0], d.position[1] + 1.5 * d.scale, d.position[2]]}
+            scale={[d.scale, d.scale, d.scale]}
+            rotation={[0, d.rotation, 0]}
+            color={d.color1}
+        />
+        ))}
+      </Instances>
 
       {/* Foliage Top Layer */}
-      <group ref={fol2Ref}>
-        <Instances range={data.length}>
-            <coneGeometry args={[0.7, 1.5, 7]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.8} />
-            {data.map((d, i) => (
-            <Instance
-                key={`fol2-${i}`}
-                position={[d.position[0], d.position[1] + 2.5 * d.scale, d.position[2]]}
-                scale={[d.scale, d.scale, d.scale]}
-                rotation={[0, d.rotation + 1, 0]}
-                color={d.color2}
-            />
-            ))}
-        </Instances>
-      </group>
+      <Instances range={data.length} material={foliageMaterial2}>
+        <coneGeometry args={[0.7, 1.5, 7]} />
+        {data.map((d, i) => (
+        <Instance
+            key={`fol2-${i}`}
+            position={[d.position[0], d.position[1] + 2.5 * d.scale, d.position[2]]}
+            scale={[d.scale, d.scale, d.scale]}
+            rotation={[0, d.rotation + 1, 0]}
+            color={d.color2}
+        />
+        ))}
+      </Instances>
     </group>
   );
 };
@@ -103,38 +106,24 @@ const Vegetation = ({ region }) => {
       const x = (Math.random() - 0.5) * 600;
 
       // 1. Noise-based Clustering
-      // Use noise to determine density. Trees grow in groves.
-      // noise2D returns -1 to 1.
-      // Scale coordinates (0.03) determines the size of the groves.
       const noiseVal = noise2D(x * 0.03, z * 0.03);
 
-      // Threshold: Only place trees in "fertile" areas (noise > -0.2).
-      // This creates empty clearings naturally.
       if (noiseVal < -0.2) continue;
 
       // 2. Path Avoidance
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
-
-      // Probabilistic rejection for organic edge
-      // Probability increases as distance increases.
-      // 0% chance at dist <= 4, 100% chance at dist >= 14
       const placementProb = Math.max(0, Math.min(1, (dist - 4) / 10));
 
-      // If random roll is greater than probability, skip this tree
       if (Math.random() > placementProb) continue;
 
       // 3. Placement
       const y = getTerrainHeight(x, z);
-
-      // Log-normal scale distribution for natural variety (many small/medium, few large)
-      // Range roughly 0.5 to 2.0
       const scale = 0.5 * Math.exp(Math.random() * 1.3);
       const rotation = Math.random() * Math.PI * 2;
 
-      // Color variation
       const mix = Math.random();
-      const variance = 0.9 + Math.random() * 0.2; // 0.9 to 1.1 brightness
+      const variance = 0.9 + Math.random() * 0.2;
 
       const c1 = baseC1.clone().lerp(baseC2, mix * 0.3).multiplyScalar(variance);
       const c2 = baseC2.clone().lerp(baseC1, mix * 0.3).multiplyScalar(variance);
@@ -150,7 +139,7 @@ const Vegetation = ({ region }) => {
     return data;
   }, [region.id, treeCount, region.treeColor1, region.treeColor2]);
 
-  // Split data into 6 chunks for more varied swaying to break synchronization
+  // Split data into chunks
   const clusters = useMemo(() => {
     const chunkSize = Math.ceil(treeData.length / 6);
     return [
@@ -163,14 +152,15 @@ const Vegetation = ({ region }) => {
     ];
   }, [treeData]);
 
+  // Pass different swaySpeeds to create variety in frequency
   return (
     <>
-      <TreeCluster data={clusters[0]} region={region} swayOffset={0} swaySpeed={0.5} />
-      <TreeCluster data={clusters[1]} region={region} swayOffset={2.1} swaySpeed={0.4} />
-      <TreeCluster data={clusters[2]} region={region} swayOffset={4.2} swaySpeed={0.6} />
-      <TreeCluster data={clusters[3]} region={region} swayOffset={1.1} swaySpeed={0.45} />
-      <TreeCluster data={clusters[4]} region={region} swayOffset={3.3} swaySpeed={0.55} />
-      <TreeCluster data={clusters[5]} region={region} swayOffset={5.4} swaySpeed={0.35} />
+      <TreeCluster data={clusters[0]} region={region} swaySpeed={0.5} />
+      <TreeCluster data={clusters[1]} region={region} swaySpeed={0.4} />
+      <TreeCluster data={clusters[2]} region={region} swaySpeed={0.6} />
+      <TreeCluster data={clusters[3]} region={region} swaySpeed={0.45} />
+      <TreeCluster data={clusters[4]} region={region} swaySpeed={0.55} />
+      <TreeCluster data={clusters[5]} region={region} swaySpeed={0.35} />
     </>
   );
 };

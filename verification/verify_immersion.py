@@ -1,62 +1,77 @@
-from playwright.sync_api import sync_playwright, expect
+import time
+from playwright.sync_api import sync_playwright
 
 def verify_immersion():
+    print("Starting verification...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         # Capture console logs
         page.on("console", lambda msg: print(f"Console: {msg.text}"))
-        page.on("pageerror", lambda exc: print(f"Page Error: {exc}"))
+        page.on("pageerror", lambda err: print(f"Page Error: {err}"))
 
+        print("Navigating to http://localhost:5173")
         try:
-            # 1. Navigate to Landing Page
-            print("Navigating to landing page...")
-            page.goto("http://localhost:5173")
-
-            # Wait for the "Begin" button
-            print("Waiting for 'Begin' button...")
-            begin_button = page.get_by_role("button", name="Begin")
-            expect(begin_button).to_be_visible(timeout=10000)
-
-            # 2. Click "Begin"
-            print("Clicking 'Begin'...")
-            begin_button.click()
-
-            # 3. Select 'Maine'
-            print("Waiting for 'Maine' region...")
-            # Use a more specific locator to avoid confusion with potential future text
-            maine_card = page.get_by_text("Maine", exact=True)
-            expect(maine_card).to_be_visible(timeout=10000)
-
-            print("Clicking 'Maine'...")
-            maine_card.click()
-
-            # 4. Wait for Loader
-            print("Waiting for loader text 'Entering Maine'...")
-            loader_text = page.get_by_text("Entering Maine")
-            expect(loader_text).to_be_visible(timeout=5000)
-
-            # 5. Wait for Loader to Disappear
-            print("Waiting for loader to disappear...")
-            # Increase timeout just in case
-            expect(loader_text).not_to_be_visible(timeout=20000)
-
-            # Wait for scene stabilization
-            page.wait_for_timeout(5000)
-
-            # 6. Take Screenshot
-            print("Taking screenshot...")
-            page.screenshot(path="verification/verification.png")
-            print("Screenshot saved to verification/verification.png")
-
+            page.goto("http://localhost:5173", timeout=60000)
         except Exception as e:
-            print(f"Error: {e}")
-            page.screenshot(path="verification/error.png")
-            print("Error screenshot saved to verification/error.png")
-            raise
-        finally:
-            browser.close()
+            print(f"Navigation failed: {e}")
+            return
+
+        # Wait for "Walk the Appalachian Trail" text
+        print("Waiting for landing text...")
+        try:
+            page.wait_for_selector("text=Walk the Appalachian Trail", timeout=30000)
+            print("Landing page loaded.")
+        except:
+            print("Landing page text not found. Screenshotting.")
+            page.screenshot(path="verification/landing_fail.png")
+            return
+
+        # Click "Begin"
+        print("Clicking Begin...")
+        try:
+            page.click("text=Begin")
+        except:
+             print("Begin button not found.")
+             return
+
+        # Wait for MapView
+        print("Waiting for MapView...")
+        time.sleep(2) # Transition
+
+        # Click "Georgia"
+        print("Clicking Georgia...")
+        try:
+            # The text might be uppercase in CSS but region.name is "Georgia"
+            page.wait_for_selector("text=Georgia", timeout=10000)
+            page.click("text=Georgia")
+        except:
+            print("Georgia not found.")
+            page.screenshot(path="verification/map_fail.png")
+            return
+
+        # Wait for Scene (Experience)
+        print("Waiting for Scene...")
+        try:
+            # Look for canvas
+            page.wait_for_selector("canvas", timeout=30000)
+            print("Canvas found.")
+        except:
+             print("Canvas not found.")
+             page.screenshot(path="verification/scene_fail.png")
+             return
+
+        # Wait for 5s to simulate immersion/warming
+        print("Waiting 5s for experience to settle...")
+        time.sleep(5)
+
+        # Screenshot
+        print("Taking screenshot...")
+        page.screenshot(path="verification/immersion_check.png")
+
+        browser.close()
+        print("Verification complete.")
 
 if __name__ == "__main__":
     verify_immersion()

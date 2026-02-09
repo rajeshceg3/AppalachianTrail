@@ -95,7 +95,8 @@ const Scene = ({ region, audioEnabled }) => {
 
     if (fogRef.current) {
       // Breathing fog density
-      let density = region.fogDensity + Math.sin(time * 0.5) * (region.fogDensity * 0.1);
+      // Add subtle noise to breathing
+      let density = region.fogDensity + Math.sin(time * 0.5) * (region.fogDensity * 0.1) + Math.cos(time * 0.23) * (region.fogDensity * 0.05);
 
       // Height modulation: Less fog as you go up (climbing out of the valley)
       // Assume typical camera heights are 5-50.
@@ -106,8 +107,19 @@ const Scene = ({ region, audioEnabled }) => {
     }
 
     if (lightRef.current) {
-      // Subtle light intensity shift
-      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.05;
+      // Sunlight warming effect
+      // Start cool white, transition to warm amber over 60s
+      const warmColor = new THREE.Color('#fff7ed'); // Warm white/amber tint
+      const baseColor = new THREE.Color('#ffffff'); // Cool white
+
+      // Progress over 60 seconds
+      const warmProgress = Math.min(1.0, time / 60.0);
+
+      // Lerp color
+      lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
+
+      // Intensity pulse + slow increase
+      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.05 + (warmProgress * 0.2);
     }
   });
 

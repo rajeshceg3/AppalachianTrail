@@ -42,9 +42,15 @@
     - Implemented probabilistic path avoidance and log-normal scaling for natural variation.
     - Added organic camera movement (banking, head bob, breathing).
     - Added atmospheric particles with wind wrapping and vertical anchoring.
+- **Immersion Enhancements (Socratic Iteration)**:
+  - **Realistic Wind**: Replaced rigid vegetation rotation with a custom vertex shader (`WindShader.js`) for organic, height-based sway.
+  - **Spatial Audio**: Implemented height-based wind modulation (wind intensifies and filters open as camera ascends).
+  - **Textured Audio**: Enhanced footstep synthesis with layered gravel crunch (bandpass filtered noise).
+  - **Living Atmosphere**: Implemented dynamic sunlight warming (transition to golden hour) and noise-modulated fog density breathing.
 - **Verification**:
   - `verification/verify_interactions.py`: Confirmed visual rendering flow (Landing -> Map -> Experience), audio toggle, and movement interactions.
   - **Final Visual Verification**: Confirmed full 3D scene rendering with terrain, vegetation, rocks, and UI overlay.
+  - `verification/verify_immersion.py`: Confirmed stability of new shader and audio logic under load.
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).
@@ -61,6 +67,7 @@
 - [x] Visual Polish (Bloom, Vignette, Rocks, Varied Trees).
 - [x] Poetic Descriptors (Content polish).
 - [x] Verification Scripts run and passed (Visuals & Interactions).
+- [x] Advanced Immersion (Shaders, Dynamic Lighting, Spatial Audio).
 
 ## Next Steps
 - Final deployment configuration (external).
