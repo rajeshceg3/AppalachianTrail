@@ -51,6 +51,11 @@
   - `verification/verify_interactions.py`: Confirmed visual rendering flow (Landing -> Map -> Experience), audio toggle, and movement interactions.
   - **Final Visual Verification**: Confirmed full 3D scene rendering with terrain, vegetation, rocks, and UI overlay.
   - `verification/verify_immersion.py`: Confirmed stability of new shader and audio logic under load.
+- **Naturalism Polish**:
+  - Increased terrain resolution (512 segments) for smoother ground.
+  - Implemented banked path geometry conforming to terrain normal.
+  - Replaced atmospheric particles with soft, billboarded textures.
+  - Removed artificial markers and naturalized lighting modulation.
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).
