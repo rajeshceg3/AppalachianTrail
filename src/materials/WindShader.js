@@ -20,25 +20,41 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
     ` + shader.vertexShader;
 
     // Inject displacement logic
+    // We compute world position to create coherent wind waves across instances.
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `
         #include <begin_vertex>
 
-        // Simple wind sway based on height
-        // Assumes local Y starts at 0 or is centered appropriately.
-        // For cones, Y is often centered, so we use max(0.0, position.y + offset) if needed.
-        // Here we assume base is roughly at Y=0 or sway increases with Y.
-        // Use object space position.
+        // Calculate world position for coherent noise
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        #ifdef USE_INSTANCING
+          worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
+        #endif
 
-        float h = max(0.0, position.y + 0.5); // Offset to ensure base doesn't move much if centered
+        // Height factor (bending increases with height)
+        // Assumes local Y is up and base is at 0.
+        float h = max(0.0, position.y + 0.5);
+
         float time = uTime * uSwaySpeed;
 
-        // Sway X
-        float swayX = sin(time + position.x * 0.5 + position.z * 0.3) * uSwayAmount * h * h;
+        // --- Gust Logic ---
+        // Combine sine waves to create rolling wind bands across the terrain.
+        // Frequencies chosen to be non-repeating.
+        float gust = sin(worldPos.x * 0.05 + time * 0.5)
+                   + sin(worldPos.z * 0.03 + time * 0.3)
+                   + sin(worldPos.x * 0.1 + worldPos.z * 0.1 + time * 0.8) * 0.5;
 
-        // Sway Z (slightly different phase/freq)
-        float swayZ = cos(time * 0.8 + position.x * 0.3 + position.z * 0.5) * uSwayAmount * h * h;
+        // Map gust (-2.5 to 2.5) to a multiplier (0.5 to 1.5)
+        float gustFactor = 1.0 + (gust * 0.2);
+
+        // Modulate amplitude by gust
+        float currentSwayAmount = uSwayAmount * gustFactor;
+
+        // --- Sway Logic ---
+        // High frequency sway based on position
+        float swayX = sin(time + worldPos.x * 0.5 + worldPos.z * 0.3) * currentSwayAmount * h * h;
+        float swayZ = cos(time * 0.8 + worldPos.x * 0.3 + worldPos.z * 0.5) * currentSwayAmount * h * h;
 
         transformed.x += swayX;
         transformed.z += swayZ;

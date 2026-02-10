@@ -3,13 +3,21 @@
 > vite
 
 
-  VITE v6.4.1  ready in 559 ms
+  VITE v6.4.1  ready in 487 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
-3:40:48 PM [vite] (client) page reload verification/verify_visuals.py
-3:40:48 PM [vite] (client) page reload verification/verify_visuals.py
-3:41:59 PM [vite] (client) hmr update /src/App.jsx, /src/index.css
-3:42:54 PM [vite] (client) page reload verification/verify_visuals.py
-3:43:58 PM [vite] (client) page reload verification/verify_visuals.py
-3:44:38 PM [vite] (client) page reload verification/verify_visuals.py
+10:01:02 AM [vite] (client) hmr update /src/components/Controls.jsx, /src/index.css
+10:01:49 AM [vite] (client) hmr update /src/components/Terrain.jsx, /src/index.css
+10:04:09 AM [vite] (client) hmr update /src/components/Scene.jsx, /src/index.css
+10:04:15 AM [vite] (client) hmr update /src/App.jsx, /src/index.css
+10:06:09 AM [vite] (client) hmr update /src/components/Terrain.jsx, /src/index.css
+10:07:49 AM [vite] (client) hmr update /src/components/Scene.jsx, /src/index.css
+10:07:49 AM [vite] (client) hmr update /src/App.jsx, /src/index.css
+10:07:49 AM [vite] (client) hmr update /src/components/Terrain.jsx, /src/index.css
+10:09:35 AM [vite] (client) hmr update /src/components/Scene.jsx, /src/index.css
+10:11:57 AM [vite] (client) page reload verification/verify_interactions.py
+10:12:48 AM [vite] (client) hmr update /src/components/Experience.jsx, /src/index.css
+10:13:36 AM [vite] (client) page reload verification/verify_interactions.py
+10:14:21 AM [vite] (client) page reload verification/verify_interactions.py
+10:15:21 AM [vite] (client) hmr update /src/components/Experience.jsx, /src/index.css

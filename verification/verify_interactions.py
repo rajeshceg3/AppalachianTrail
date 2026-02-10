@@ -7,6 +7,8 @@ def run(playwright):
     context = browser.new_context(viewport={'width': 1280, 'height': 720}, has_touch=True)
     page = context.new_page()
 
+    page.on("console", lambda msg: print(f"Console: {msg.text}"))
+
     print("Navigating to app...")
     page.goto("http://localhost:5173")
 
@@ -56,33 +58,42 @@ def run(playwright):
         print("Loader text might have passed quickly.")
 
     # Wait for loader to disappear and scene to stabilize
-    time.sleep(4)
+    # Animation takes 1.5s (loader) + 1.2s (delay) + 2s (fade) = ~4.7s.
+    # Adding extra buffer.
+    time.sleep(8)
 
     # Check Audio Button
     print("Checking Audio Button...")
     try:
-        # Look for button with text AUDIO or MUTE
-        audio_btn = page.wait_for_selector("button", timeout=5000)
-        # We have multiple buttons (Back to Map, Audio). Need to find specific one.
-        buttons = page.query_selector_all("button")
-        audio_btn = None
-        for btn in buttons:
-            if "AUDIO" in btn.inner_text():
-                audio_btn = btn
-                break
+        # Check if any button exists in DOM
+        count = page.evaluate("document.querySelectorAll('button').length")
+        print(f"Found {count} buttons in DOM.")
 
-        if audio_btn:
-            print("Audio button found. Clicking to toggle...")
-            audio_btn.click()
-            time.sleep(1)
-            # Verify text changes to MUTE
-            content = page.content()
-            if "MUTE" in content:
-                print("Audio toggled successfully (Button text is MUTE).")
-            else:
-                print("Audio toggle failed (Text MUTE not found).")
+        if count > 0:
+            # Check visibility of first button
+            is_visible = page.evaluate("document.querySelector('button').offsetParent !== null")
+            print(f"First button visible: {is_visible}")
+
+            # Check opacity
+            opacity = page.evaluate("window.getComputedStyle(document.querySelector('button')).opacity")
+            print(f"First button opacity: {opacity}")
+
+        # Look for button with text AUDIO or MUTE
+        # Use state='attached' to find it even if hidden
+        audio_btn_loc = page.locator("button", has_text="AUDIO")
+        if audio_btn_loc.count() > 0:
+             print("Audio button locator found.")
+             # Force click if needed or wait for visibility
+             audio_btn_loc.first.click(force=True)
+             print("Clicked Audio button (force).")
+             time.sleep(1)
+             content = page.content()
+             if "MUTE" in content:
+                 print("Audio toggled successfully.")
+             else:
+                 print("Audio toggle failed.")
         else:
-            print("Audio button not found.")
+            print("Audio button locator NOT found.")
 
     except Exception as e:
         print(f"Error checking audio: {e}")

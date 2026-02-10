@@ -217,8 +217,16 @@ const Controls = ({ audioRef }) => {
 
     // Breathing Sway (always active)
     breathRef.current += delta * 0.5;
-    const breathY = Math.sin(breathRef.current) * 0.02; // Very subtle up/down
-    const breathZ = Math.cos(breathRef.current * 0.4) * 0.005; // Micro roll
+
+    // Polyrhythmic breathing
+    // Sum of sines with non-integer period ratios (e.g. 1.0, 1.618)
+    // This removes the mechanical loop feeling
+    const breathY = Math.sin(breathRef.current) * 0.015
+                  + Math.sin(breathRef.current * 1.6) * 0.005
+                  + Math.sin(breathRef.current * 0.4) * 0.005;
+
+    const breathZ = Math.cos(breathRef.current * 0.4) * 0.003
+                  + Math.sin(breathRef.current * 0.7) * 0.002;
 
     // Head Bob calculation
     const bobAmount = Math.sin(bobRef.current) * 0.05;
@@ -232,6 +240,7 @@ const Controls = ({ audioRef }) => {
 
     // Initial Snap or Smooth Lerp
     if (!isInitialized.current) {
+        console.log("Controls Init: GroundHeight", groundHeight, "TargetY", targetY, "CamPos", camera.position);
         camera.position.y = targetY;
         isInitialized.current = true;
     } else {
