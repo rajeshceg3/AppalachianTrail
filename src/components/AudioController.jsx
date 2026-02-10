@@ -133,33 +133,35 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     windRRef.current = createWindLayer(0.6);
 
 
-    // Rustle Sound Setup (Leaves/Trees) - Stereo
-    // Use 2 sources for width
-    const createRustleLayer = (pan) => {
+    // Rustle Sound Setup (Leaves/Trees) - "Canopy Layer"
+    // Use stereo width but centered logic
+    const createRustleLayer = () => {
         const src = ctx.createBufferSource();
         src.buffer = noiseBuffer;
         src.loop = true;
 
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 1200;
+        // Bandpass for "leafy" texture (cutting lows and harsh highs)
+        const highPass = ctx.createBiquadFilter();
+        highPass.type = 'highpass';
+        highPass.frequency.value = 800;
+
+        const lowPass = ctx.createBiquadFilter();
+        lowPass.type = 'lowpass';
+        lowPass.frequency.value = 6000;
 
         const gain = ctx.createGain();
         gain.gain.value = 0.0;
 
+        // Slight stereo width
         const panner = ctx.createStereoPanner();
-        panner.pan.value = pan;
+        panner.pan.value = 0;
 
-        src.connect(filter).connect(gain).connect(panner).connect(ctx.destination);
+        src.connect(highPass).connect(lowPass).connect(gain).connect(panner).connect(ctx.destination);
         src.start();
         return gain;
     }
 
-    // We'll control one gain ref but apply to both? Or simple center channel?
-    // Let's keep it simple: Just one gain ref controlling a center source for now,
-    // or maybe create a stereo effect here too.
-    // The previous implementation was mono (center). Let's make it stereo-ish.
-    const rustleGain = createRustleLayer(0); // Center for now to avoid complexity
+    const rustleGain = createRustleLayer();
     rustleGainRef.current = rustleGain;
 
     // Insects / Nature Ambience
@@ -200,50 +202,56 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
     const updateAudio = () => {
       const time = Date.now() / 1000;
-      const fluctuation = Math.sin(time * 0.5) * 0.5 + 0.5;
 
       // Calculate effective wind intensity based on height
       const camY = camera.position.y;
-      // Base assumption: Terrain is roughly 0-20. Peaks might be 50.
-      // Boost wind as we go up.
-      // At Y=0, factor is 1.0. At Y=50, factor is 2.0.
       const heightFactor = 1.0 + (Math.max(0, camY) / 50.0);
 
       let windIntensity = (region.windIntensity || 0.5) * heightFactor;
-      // Clamp to reasonable max
       windIntensity = Math.min(1.2, windIntensity);
 
       const now = ctx.currentTime;
 
+      // --- Wind Gust Logic (Synced with Visuals) ---
+      // Use similar polyrhythm to visual shader: sin(t*0.5) + sin(t*0.3)
+      // Visual shader uses swaySpeed, but base 1.0 is default.
+      const gust = Math.sin(time * 0.5) + Math.sin(time * 0.3) * 0.7;
+      // gust ranges roughly -1.7 to 1.7. Map to 0.5 to 1.5
+      const gustFactor = 0.8 + (gust * 0.2);
+
       // Stereo Wind Updates
+      // Left/Right fluctuation
       const flucL = Math.sin(time * 0.4) * 0.5 + 0.5;
       const flucR = Math.sin(time * 0.4 + 2.0) * 0.5 + 0.5;
 
       const baseGain = enabled ? windIntensity * 0.05 : 0;
 
       if (windLRef.current) {
-         const targetGainL = baseGain * (0.5 + 0.5 * flucL);
-         // Wind howls more (higher freq) at intensity
-         const targetFreqL = 200 + (windIntensity * 800) * flucL;
+         const targetGainL = baseGain * (0.5 + 0.5 * flucL) * gustFactor;
+         const targetFreqL = 200 + (windIntensity * 800) * flucL * gustFactor;
          windLRef.current.gain.gain.setTargetAtTime(targetGainL, now, 0.5);
          windLRef.current.filter.frequency.setTargetAtTime(targetFreqL, now, 0.5);
       }
 
       if (windRRef.current) {
-         const targetGainR = baseGain * (0.5 + 0.5 * flucR);
-         const targetFreqR = 200 + (windIntensity * 800) * flucR;
+         const targetGainR = baseGain * (0.5 + 0.5 * flucR) * gustFactor;
+         const targetFreqR = 200 + (windIntensity * 800) * flucR * gustFactor;
          windRRef.current.gain.gain.setTargetAtTime(targetGainR, now, 0.5);
          windRRef.current.filter.frequency.setTargetAtTime(targetFreqR, now, 0.5);
       }
 
-      // Rustle logic
+      // Rustle Logic (Canopy)
       if (rustleGainRef.current) {
-        // Rustle increases with wind, but maybe less at very high altitudes (above treeline)?
-        // Assuming treeline is around 40?
-        // Let's just keep it coupled to windIntensity for now.
-        const rustleBase = enabled ? windIntensity * 0.03 : 0;
-        const rustleTarget = rustleBase * Math.pow(fluctuation, 2);
-        rustleGainRef.current.gain.setTargetAtTime(rustleTarget, now, 0.2);
+        // Rustle volume follows the gust intensity strongly
+        // Trees make noise when wind changes/peaks
+        const rustleBase = enabled ? windIntensity * 0.04 : 0;
+
+        // Use the derivative of gust? Or just magnitude?
+        // Magnitude is fine.
+        // Gust factor peaks are when wind is strongest.
+        const rustleTarget = rustleBase * (gustFactor * gustFactor); // Square for more dynamic range
+
+        rustleGainRef.current.gain.setTargetAtTime(rustleTarget, now, 0.3);
       }
 
       // Insects logic
@@ -265,7 +273,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isReady, region, enabled, camera]); // Added camera to deps, though it's stable
+  }, [isReady, region, enabled, camera]);
 
   // Birds Logic
   useEffect(() => {
@@ -288,21 +296,43 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
           if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
           const t = ctx.currentTime;
+
+          // --- Spatial Distance Simulation ---
+          // Random distance 0 (Close) to 1 (Far)
+          // Bias towards medium-far (square root distribution)
+          const distance = Math.sqrt(Math.random());
+
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           const panner = ctx.createStereoPanner();
+          const distFilter = ctx.createBiquadFilter();
 
+          // Panning (Random L/R)
           panner.pan.value = (Math.random() * 2) - 1;
 
-          osc.connect(gain);
+          // Distance Filtering (Lowpass)
+          // Close = 12kHz, Far = 800Hz
+          const cutoff = 800 + (11200 * (1.0 - distance));
+          distFilter.type = 'lowpass';
+          distFilter.frequency.setValueAtTime(cutoff, t);
+
+          // Distance Attenuation
+          // Close = 0.03, Far = 0.005
+          const peakVol = 0.005 + (0.025 * (1.0 - distance));
+
+          osc.connect(distFilter);
+          distFilter.connect(gain);
           gain.connect(panner);
           panner.connect(ctx.destination);
 
-          const freq = 2000 + Math.random() * 3000;
-          osc.frequency.setValueAtTime(freq, t);
+          // Bird Chirp Logic
+          const baseFreq = 2000 + Math.random() * 3000;
+          osc.frequency.setValueAtTime(baseFreq, t);
+          // Slight chirp (pitch drop or rise)
+          osc.frequency.exponentialRampToValueAtTime(baseFreq * (0.9 + Math.random() * 0.2), t + 0.1);
 
           gain.gain.setValueAtTime(0, t);
-          gain.gain.linearRampToValueAtTime(0.02, t + 0.05);
+          gain.gain.linearRampToValueAtTime(peakVol, t + 0.05);
           gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
 
           osc.start(t);
