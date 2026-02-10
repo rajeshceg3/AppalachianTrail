@@ -11,7 +11,7 @@ import Vegetation from './Vegetation';
 import Rocks from './Rocks';
 import { getTerrainHeight } from '../utils/terrain';
 
-const AtmosphericParticles = ({ color, count = 2000 }) => {
+const AtmosphericParticles = ({ color, type = 'dust', count = 2000 }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
@@ -38,7 +38,8 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
       z: (Math.random() - 0.5) * 100,
       speed: 0.2 + Math.random() * 0.5,
       offset: Math.random() * 100,
-      baseScale: 0.5 + Math.random() * 1.5 // Varied size for organic look
+      baseScale: 0.5 + Math.random() * 1.5, // Varied size for organic look
+      rotationSpeed: (Math.random() - 0.5) * 2
     }));
   }, [count]);
 
@@ -53,42 +54,86 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
         const range = 200;
         const halfRange = range / 2;
 
-        // Move particle along Z based on time (wind direction)
-        let z = particle.z + time * particle.speed;
+        let z = particle.z;
+        let x = particle.x;
+
+        // Custom Movement Logic
+        if (type === 'snow' || type === 'leaves') {
+             // Wind drift
+             z += time * particle.speed;
+        } else {
+             // Default wind
+             z += time * particle.speed;
+        }
 
         // Wrap Z relative to camera
-        // (z - camPos.z) gives distance. Modulo wraps it.
         let dz = (z - camPos.z) % range;
-        // Adjust to be centered around 0 (-50 to 50)
         if (dz < -halfRange) dz += range;
         if (dz > halfRange) dz -= range;
 
         // Wrap X relative to camera
-        let dx = (particle.x - camPos.x) % range;
+        let dx = (x - camPos.x) % range;
         if (dx < -halfRange) dx += range;
         if (dx > halfRange) dx -= range;
 
-        // Vertical sway
-        // Anchor Y to camera height to ensure particles are always visible around the player
-        // particle.y is 0-20, so we center it around the camera (e.g., -10 to +10 relative)
-        const relativeY = particle.y - 10;
-        const y = camPos.y + relativeY + Math.sin(time * 0.5 + particle.offset) * 0.5;
+        // Add Sway to X for leaves
+        if (type === 'leaves') {
+             dx += Math.sin(time + particle.offset) * 2.0;
+        }
+
+        // Vertical Movement (Y)
+        // We calculate 'dy' relative to camera height (camPos.y)
+        let dy;
+
+        if (type === 'snow') {
+             // Fast falling
+             const fallSpeed = 3.0 * particle.speed;
+             // Modulo 20 window centered on camera
+             let fallY = -(time * fallSpeed + particle.offset) % 20;
+             // fallY is 0 to -20. Shift to +10 to -10
+             dy = fallY + 10;
+        } else if (type === 'leaves') {
+             // Slow falling
+             const fallSpeed = 1.0 * particle.speed;
+             let fallY = -(time * fallSpeed + particle.offset) % 20;
+             dy = fallY + 10;
+        } else if (type === 'fireflies') {
+             // Floating sine wave
+             // Centered around 0 (-5 to +5 range)
+             dy = (particle.y - 10) + Math.sin(time * 1.0 + particle.offset) * 2.0;
+        } else {
+             // Dust / Mist
+             // Gentle sway
+             dy = (particle.y - 10) + Math.sin(time * 0.5 + particle.offset) * 0.5;
+        }
 
         dummy.position.set(
             camPos.x + dx,
-            y,
+            camPos.y + dy,
             camPos.z + dz
         );
 
-        // Billboard: always face camera
-        dummy.quaternion.copy(state.camera.quaternion);
+        // Rotation
+        if (type === 'leaves') {
+            dummy.rotation.x = time * particle.rotationSpeed;
+            dummy.rotation.z = time * particle.rotationSpeed * 0.5;
+            dummy.rotation.y = time * 0.2;
+        } else {
+            // Billboard: always face camera
+            dummy.quaternion.copy(state.camera.quaternion);
+        }
 
-        // Scale pulse for "breathing" effect + base scale variation
-        // Desynchronize breathing with particle.offset
-        const scale = particle.baseScale * (1.0 + Math.sin(time * 2 + particle.offset) * 0.2);
-        // Multiply by 0.1 because plane is 1x1, spheres were 0.04 radius (0.08 diameter)
-        dummy.scale.setScalar(scale * 0.1);
+        // Scale
+        let scale = particle.baseScale * 0.1;
 
+        if (type === 'fireflies') {
+             // Blinking
+             scale *= (0.5 + Math.sin(time * 3 + particle.offset) * 0.5);
+        } else if (type === 'mist') {
+             scale *= 3.0; // Mist is larger
+        }
+
+        dummy.scale.setScalar(scale);
         dummy.updateMatrix();
         meshRef.current.setMatrixAt(i, dummy.matrix);
     });
@@ -102,8 +147,9 @@ const AtmosphericParticles = ({ color, count = 2000 }) => {
         color={color}
         map={particleTexture}
         transparent
-        opacity={0.3}
+        opacity={type === 'mist' ? 0.1 : 0.3}
         depthWrite={false}
+        side={THREE.DoubleSide}
       />
     </instancedMesh>
   );
@@ -176,7 +222,7 @@ const Scene = ({ region, audioEnabled }) => {
       <Rocks region={region} />
 
       {/* Atmospheric particles */}
-      <AtmosphericParticles color={region.particles} />
+      <AtmosphericParticles color={region.particles} type={region.particleType} />
 
       <EffectComposer disableNormalPass>
         <DepthOfField
