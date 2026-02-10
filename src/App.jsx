@@ -17,7 +17,7 @@ function App() {
   };
 
   return (
-    <div className="w-full h-full relative bg-stone-50">
+    <div className="w-full min-h-screen relative bg-stone-50">
       {stage === 'landing' && <Landing onStart={() => setStage('map')} />}
       {stage === 'map' && <MapView regions={regions} onSelectRegion={handleSelectRegion} />}
       {stage === 'experience' && <Experience selectedRegion={selectedRegion} onBackToMap={() => setStage('map')} />}
