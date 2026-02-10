@@ -1,10 +1,6 @@
 import React, { useMemo } from 'react';
 import { Instances, Instance } from '@react-three/drei';
-import { createNoise2D } from 'simplex-noise';
-import { getTerrainHeight, getPathX } from '../utils/terrain';
-
-// Independent noise instance for rock distribution
-const noise2D = createNoise2D(Math.random);
+import { getTerrainHeight, getPathX, noise2D } from '../utils/terrain';
 
 const Rocks = ({ region }) => {
   // More rocks in rocky regions (Maine, New England)

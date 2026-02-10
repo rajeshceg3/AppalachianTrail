@@ -50,8 +50,13 @@ const Path = ({ color }) => {
         const left = new THREE.Vector3().addVectors(point, perp);
         const right = new THREE.Vector3().subVectors(point, perp);
 
-        vertices.push(left.x, left.y, left.z);
-        vertices.push(right.x, right.y, right.z);
+        // Snap to terrain height to prevent floating/clipping
+        // We use the calculated X/Z but sample the exact ground height
+        const leftY = getTerrainHeight(left.x, left.z) + 0.02;
+        const rightY = getTerrainHeight(right.x, right.z) + 0.02;
+
+        vertices.push(left.x, leftY, left.z);
+        vertices.push(right.x, rightY, right.z);
 
         // UVs for texture mapping if needed
         const v = i / (pathPoints.length - 1);
