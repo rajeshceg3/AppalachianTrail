@@ -12,6 +12,7 @@ export const regions = [
     treeColor1: '#2d3a22',
     treeColor2: '#36452a',
     particles: '#ffffff',
+    particleType: 'fireflies',
     environment: 'forest',
     windIntensity: 0.4,
     birdActivity: 0.6
@@ -29,6 +30,7 @@ export const regions = [
     treeColor1: '#1e293b', // Dark slate blue/green
     treeColor2: '#334155',
     particles: '#e0f2fe',
+    particleType: 'mist',
     environment: 'park',
     windIntensity: 0.6,
     birdActivity: 0.4
@@ -46,6 +48,7 @@ export const regions = [
     treeColor1: '#15803d',
     treeColor2: '#166534',
     particles: '#f0fdf4',
+    particleType: 'dust',
     environment: 'park',
     windIntensity: 0.5,
     birdActivity: 0.7
@@ -63,6 +66,7 @@ export const regions = [
     treeColor1: '#3f6212', // Dark olive
     treeColor2: '#365314',
     particles: '#e7e5e4',
+    particleType: 'dust',
     environment: 'forest',
     windIntensity: 0.3,
     birdActivity: 0.8
@@ -80,6 +84,7 @@ export const regions = [
     treeColor1: '#ea580c', // Orange
     treeColor2: '#b45309', // Brown/Orange
     particles: '#fdba74',
+    particleType: 'leaves',
     environment: 'sunset',
     windIntensity: 0.7,
     birdActivity: 0.3
@@ -97,6 +102,7 @@ export const regions = [
     treeColor1: '#0f172a', // Very dark blue/green
     treeColor2: '#1e293b',
     particles: '#e2e8f0',
+    particleType: 'snow',
     environment: 'park',
     windIntensity: 0.9,
     birdActivity: 0.1
