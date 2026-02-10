@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 const Landing = ({ onStart }) => {
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full text-stone-800">
+    <div className="flex flex-col items-center justify-center w-full h-screen text-stone-800">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
