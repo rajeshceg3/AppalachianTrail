@@ -1,9 +1,6 @@
 import React, { useLayoutEffect, useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { createNoise2D } from 'simplex-noise';
-import { getTerrainHeight } from '../utils/terrain';
-
-const noise2D = createNoise2D(Math.random);
+import { getTerrainHeight, noise2D } from '../utils/terrain';
 
 const terrainArgs = [600, 600, 512, 512];
 

@@ -1,19 +1,15 @@
 import React, { useMemo, useRef, useLayoutEffect } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { createNoise2D } from 'simplex-noise';
 import * as THREE from 'three';
-import { getTerrainHeight, getPathX } from '../utils/terrain';
+import { getTerrainHeight, getPathX, noise2D } from '../utils/terrain';
 import { applyWindShader } from '../materials/WindShader';
-
-// Create a seeded noise instance for consistent vegetation patterns
-const noise2D = createNoise2D(Math.random);
 
 const TreeCluster = ({ data, region, swaySpeed }) => {
   // Reactive sway based on wind intensity
   const windIntensity = region.windIntensity || 0.4;
   const speed = swaySpeed * (0.8 + windIntensity);
-  const amp = 0.2 * (0.5 + windIntensity * 2.0); // Magnitude for shader (0.2 is reasonable for vertex displacement)
+  const amp = 0.2 * (0.5 + windIntensity * 2.0); // Magnitude for shader
 
   // Create materials with wind shader
   const foliageMaterial1 = useMemo(() => {
@@ -24,19 +20,22 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
 
   const foliageMaterial2 = useMemo(() => {
       const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
-      applyWindShader(m, speed, amp * 1.5); // Top layer moves more
+      applyWindShader(m, speed, amp * 1.5);
+      return m;
+  }, [speed, amp]);
+
+  const foliageMaterial3 = useMemo(() => {
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
+      applyWindShader(m, speed, amp * 2.0); // Topmost layer moves most
       return m;
   }, [speed, amp]);
 
   useFrame((state) => {
     const time = state.clock.elapsedTime;
 
-    if (foliageMaterial1.userData.update) {
-        foliageMaterial1.userData.update(time);
-    }
-    if (foliageMaterial2.userData.update) {
-        foliageMaterial2.userData.update(time);
-    }
+    if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time);
+    if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time);
+    if (foliageMaterial3.userData.update) foliageMaterial3.userData.update(time);
   });
 
   return (
@@ -48,9 +47,13 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
         {data.map((d, i) => (
           <Instance
             key={`trunk-${i}`}
-            position={[d.position[0], d.position[1] + 0.5 * d.scale, d.position[2]]}
+            position={[
+              d.position[0] - 0.5 * d.scale * d.tiltZ,
+              d.position[1] + 0.5 * d.scale,
+              d.position[2] + 0.5 * d.scale * d.tiltX
+            ]}
             scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation, 0]}
+            rotation={[d.tiltX, d.rotation, d.tiltZ]}
           />
         ))}
       </Instances>
@@ -61,24 +64,50 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
         {data.map((d, i) => (
         <Instance
             key={`fol1-${i}`}
-            position={[d.position[0], d.position[1] + 1.5 * d.scale, d.position[2]]}
+            position={[
+              d.position[0] - 1.5 * d.scale * d.tiltZ,
+              d.position[1] + 1.5 * d.scale,
+              d.position[2] + 1.5 * d.scale * d.tiltX
+            ]}
             scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation, 0]}
+            rotation={[d.tiltX, d.rotation, d.tiltZ]}
             color={d.color1}
         />
         ))}
       </Instances>
 
-      {/* Foliage Top Layer */}
+      {/* Foliage Middle Layer */}
       <Instances range={data.length} material={foliageMaterial2}>
         <coneGeometry args={[0.7, 1.5, 7]} />
         {data.map((d, i) => (
         <Instance
             key={`fol2-${i}`}
-            position={[d.position[0], d.position[1] + 2.5 * d.scale, d.position[2]]}
+            position={[
+              d.position[0] - 2.5 * d.scale * d.tiltZ,
+              d.position[1] + 2.5 * d.scale,
+              d.position[2] + 2.5 * d.scale * d.tiltX
+            ]}
             scale={[d.scale, d.scale, d.scale]}
-            rotation={[0, d.rotation + 1, 0]}
+            rotation={[d.tiltX, d.rotation + 1, d.tiltZ]}
             color={d.color2}
+        />
+        ))}
+      </Instances>
+
+      {/* Foliage Top Layer */}
+      <Instances range={data.length} material={foliageMaterial3}>
+        <coneGeometry args={[0.4, 1.2, 7]} />
+        {data.map((d, i) => (
+        <Instance
+            key={`fol3-${i}`}
+            position={[
+              d.position[0] - 3.2 * d.scale * d.tiltZ,
+              d.position[1] + 3.2 * d.scale,
+              d.position[2] + 3.2 * d.scale * d.tiltX
+            ]}
+            scale={[d.scale, d.scale, d.scale]}
+            rotation={[d.tiltX, d.rotation + 2, d.tiltZ]}
+            color={d.color1}
         />
         ))}
       </Instances>
@@ -121,6 +150,9 @@ const Vegetation = ({ region }) => {
       const y = getTerrainHeight(x, z);
       const scale = 0.5 * Math.exp(Math.random() * 1.3);
       const rotation = Math.random() * Math.PI * 2;
+      // Random tilt for organic feel (up to ~6 degrees)
+      const tiltX = (Math.random() - 0.5) * 0.2;
+      const tiltZ = (Math.random() - 0.5) * 0.2;
 
       const mix = Math.random();
       const variance = 0.9 + Math.random() * 0.2;
@@ -132,6 +164,8 @@ const Vegetation = ({ region }) => {
           position: [x, y, z],
           scale,
           rotation,
+          tiltX,
+          tiltZ,
           color1: c1,
           color2: c2
       });

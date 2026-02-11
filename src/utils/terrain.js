@@ -16,7 +16,7 @@ function mulberry32(a) {
 // Seed the noise generator for consistency across reloads/imports
 const seed = 12345;
 const random = mulberry32(seed);
-const noise2D = createNoise2D(random);
+export const noise2D = createNoise2D(random);
 
 /**
  * Fractal Brownian Motion (FBM)
