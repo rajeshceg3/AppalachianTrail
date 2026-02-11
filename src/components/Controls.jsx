@@ -19,11 +19,12 @@ const Controls = ({ audioRef }) => {
 
   // Footstep tracking
   const lastStepPosition = useRef(new THREE.Vector3());
-  const STEP_DISTANCE = 1.5;
+  // const STEP_DISTANCE = 1.5; // Deprecated in favor of bob-sync
   const WALK_SPEED = 2.5;
 
   // Head bobbing state
   const bobRef = useRef(0);
+  const wasLow = useRef(false); // Latch for footstep trigger
   // Breathing sway state
   const breathRef = useRef(0);
   // Bank (roll) state
@@ -31,9 +32,6 @@ const Controls = ({ audioRef }) => {
   const targetBankRef = useRef(0);
 
   useEffect(() => {
-    // Initialize last step position
-    lastStepPosition.current.copy(camera.position);
-
     // Initialize rotation state from current camera
     currentEuler.current.setFromQuaternion(camera.quaternion);
     targetEuler.current.copy(currentEuler.current);
@@ -202,17 +200,23 @@ const Controls = ({ audioRef }) => {
         const speed = velocity.current.length();
         bobRef.current += delta * speed * 4.0;
 
-        // Check footsteps
-        const dist = camera.position.distanceTo(lastStepPosition.current);
-        if (dist > STEP_DISTANCE) {
+        // Check footsteps (Phase based)
+        // Trigger at bottom of sine wave (-1.0)
+        // Use threshold -0.9 with latch
+        const bobSine = Math.sin(bobRef.current);
+        if (bobSine < -0.9 && !wasLow.current) {
             if (audioRef && audioRef.current) {
                 audioRef.current.playFootstep();
             }
-            lastStepPosition.current.copy(camera.position);
+            wasLow.current = true;
+        }
+        if (bobSine > -0.9) {
+             wasLow.current = false;
         }
     } else {
         // Reset bob slowly when stopped
         bobRef.current = THREE.MathUtils.lerp(bobRef.current, Math.round(bobRef.current / Math.PI) * Math.PI, delta * 5);
+        wasLow.current = false;
     }
 
     // Breathing Sway (always active)

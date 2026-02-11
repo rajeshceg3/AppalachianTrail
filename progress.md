@@ -43,12 +43,17 @@
     - Implemented probabilistic path avoidance and log-normal scaling for natural variation.
     - Added organic camera movement (banking, head bob, breathing).
     - Added atmospheric particles with wind wrapping and vertical anchoring.
-- **Immersion Enhancements (Socratic Iteration)**:
+- **Immersion Enhancements (Socratic Iteration 1)**:
   - **Realistic Wind**: Replaced rigid vegetation rotation with a custom vertex shader (`WindShader.js`) for organic, height-based sway.
   - **Spatial Audio**: Implemented height-based wind modulation (wind intensifies and filters open as camera ascends).
   - **Textured Audio**: Enhanced footstep synthesis with layered gravel crunch (bandpass filtered noise).
   - **Living Atmosphere**: Implemented dynamic sunlight warming (transition to golden hour) and noise-modulated fog density breathing.
   - **Dynamic Particles**: Implemented `AtmosphericParticles` with distinct behaviors (`snow`, `leaves`, `fireflies`, `mist`) driven by region data.
+- **Enhanced Immersion (Socratic Iteration 2)**:
+  - **Audio-Visual Sync**: Implemented `useFrame`-based wind calculation in `AudioController.jsx` to synchronize audio swells exactly with visual tree sway.
+  - **Physical Footsteps**: Replaced distance-based footstep triggers with phase-based triggering (head bob trough) for grounded impact feel.
+  - **Procedural Detail**: Added `roughnessMap` and `bumpMap` procedural noise generation in `Terrain.jsx` for tangible surface texture.
+  - **Atmospheric Breathing**: Implemented slow cloud shadow cycle (60s) in `Scene.jsx` to modulate light and fog density dynamically.
 - **Verification**:
   - `verification/verify_interactions.py`: Confirmed visual rendering flow (Landing -> Map -> Experience), audio toggle, and movement interactions.
   - **Final Visual Verification**: Confirmed full 3D scene rendering with terrain, vegetation, rocks, and UI overlay.
