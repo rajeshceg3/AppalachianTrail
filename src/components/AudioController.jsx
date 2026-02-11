@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useThree, useFrame } from '@react-three/fiber';
 
 const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const audioContextRef = useRef(null);
@@ -193,87 +193,94 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     };
   }, []);
 
-  // Update Ambience
-  useEffect(() => {
+  // Update Ambience (Synced with useFrame)
+  useFrame((state) => {
     if (!isReady || !audioContextRef.current) return;
 
-    let animationFrameId;
     const ctx = audioContextRef.current;
+    const time = state.clock.elapsedTime; // Use visual time for sync
+    const camPos = camera.position;
 
-    const updateAudio = () => {
-      const time = Date.now() / 1000;
+    // Calculate effective wind intensity based on height
+    const heightFactor = 1.0 + (Math.max(0, camPos.y) / 50.0);
 
-      // Calculate effective wind intensity based on height
-      const camY = camera.position.y;
-      const heightFactor = 1.0 + (Math.max(0, camY) / 50.0);
+    let windIntensity = (region.windIntensity || 0.5) * heightFactor;
+    windIntensity = Math.min(1.2, windIntensity);
 
-      let windIntensity = (region.windIntensity || 0.5) * heightFactor;
-      windIntensity = Math.min(1.2, windIntensity);
+    const now = ctx.currentTime;
 
-      const now = ctx.currentTime;
+    // --- Wind Gust Logic (Synced with Visual Shader) ---
+    // Matches src/materials/WindShader.js logic exactly
+    // gust = sin(worldPos.x * 0.05 + time * 0.5) ...
+    // We use camera position as "worldPos" so the wind sounds like it's WHERE YOU ARE.
 
-      // --- Wind Gust Logic (Synced with Visuals) ---
-      // Use similar polyrhythm to visual shader: sin(t*0.5) + sin(t*0.3)
-      // Visual shader uses swaySpeed, but base 1.0 is default.
-      const gust = Math.sin(time * 0.5) + Math.sin(time * 0.3) * 0.7;
-      // gust ranges roughly -1.7 to 1.7. Map to 0.5 to 1.5
-      const gustFactor = 0.8 + (gust * 0.2);
+    // Shader uses:
+    // float gust = sin(worldPos.x * 0.05 + time * 0.5)
+    //            + sin(worldPos.z * 0.03 + time * 0.3)
+    //            + sin(worldPos.x * 0.1 + worldPos.z * 0.1 + time * 0.8) * 0.5;
 
-      // Stereo Wind Updates
-      // Left/Right fluctuation
-      const flucL = Math.sin(time * 0.4) * 0.5 + 0.5;
-      const flucR = Math.sin(time * 0.4 + 2.0) * 0.5 + 0.5;
+    // Adjust speed factors slightly if needed, but keeping identical ensures sync.
+    // Note: Shader time is uTime * uSwaySpeed. Default swaySpeed is 1.0 (approx).
 
-      const baseGain = enabled ? windIntensity * 0.05 : 0;
+    // We use the same multipliers as the shader:
+    const gustVal = Math.sin(camPos.x * 0.05 + time * 0.5)
+                  + Math.sin(camPos.z * 0.03 + time * 0.3)
+                  + Math.sin(camPos.x * 0.1 + camPos.z * 0.1 + time * 0.8) * 0.5;
 
-      if (windLRef.current) {
-         const targetGainL = baseGain * (0.5 + 0.5 * flucL) * gustFactor;
-         const targetFreqL = 200 + (windIntensity * 800) * flucL * gustFactor;
-         windLRef.current.gain.gain.setTargetAtTime(targetGainL, now, 0.5);
-         windLRef.current.filter.frequency.setTargetAtTime(targetFreqL, now, 0.5);
-      }
+    // Shader maps gust (-2.5 to 2.5) to a multiplier (0.5 to 1.5)
+    // float gustFactor = 1.0 + (gust * 0.2);
+    const gustFactor = 1.0 + (gustVal * 0.2);
 
-      if (windRRef.current) {
-         const targetGainR = baseGain * (0.5 + 0.5 * flucR) * gustFactor;
-         const targetFreqR = 200 + (windIntensity * 800) * flucR * gustFactor;
-         windRRef.current.gain.gain.setTargetAtTime(targetGainR, now, 0.5);
-         windRRef.current.filter.frequency.setTargetAtTime(targetFreqR, now, 0.5);
-      }
+    // Stereo Wind Updates
+    // Left/Right fluctuation (independent of gust logic, just for stereo width)
+    const flucL = Math.sin(time * 0.4) * 0.5 + 0.5;
+    const flucR = Math.sin(time * 0.4 + 2.0) * 0.5 + 0.5;
 
-      // Rustle Logic (Canopy)
-      if (rustleGainRef.current) {
-        // Rustle volume follows the gust intensity strongly
-        // Trees make noise when wind changes/peaks
-        const rustleBase = enabled ? windIntensity * 0.04 : 0;
+    const baseGain = enabled ? windIntensity * 0.05 : 0;
 
-        // Use the derivative of gust? Or just magnitude?
-        // Magnitude is fine.
-        // Gust factor peaks are when wind is strongest.
-        const rustleTarget = rustleBase * (gustFactor * gustFactor); // Square for more dynamic range
+    if (windLRef.current) {
+        // Modulate gain by gustFactor to swell with visual wind
+        const targetGainL = baseGain * (0.5 + 0.5 * flucL) * gustFactor;
+        // Pitch/Filter also follows gust (wind screams higher in gusts)
+        const targetFreqL = 200 + (windIntensity * 800) * flucL * gustFactor;
 
-        rustleGainRef.current.gain.setTargetAtTime(rustleTarget, now, 0.3);
-      }
+        windLRef.current.gain.gain.setTargetAtTime(targetGainL, now, 0.1); // Fast response
+        windLRef.current.filter.frequency.setTargetAtTime(targetFreqL, now, 0.1);
+    }
 
-      // Insects logic
-      if (insectsGainRef.current) {
-          const insectBase = enabled ? 0.015 : 0;
-          // Fade out insects as wind increases (realism)
-          const windSuppress = Math.max(0, 1.0 - windIntensity * 0.8);
-          const insectPulse = 0.8 + Math.sin(time * 8) * 0.2;
+    if (windRRef.current) {
+        const targetGainR = baseGain * (0.5 + 0.5 * flucR) * gustFactor;
+        const targetFreqR = 200 + (windIntensity * 800) * flucR * gustFactor;
 
-          const targetInsect = insectBase * windSuppress * insectPulse;
-          insectsGainRef.current.gain.setTargetAtTime(targetInsect, now, 0.5);
-      }
+        windRRef.current.gain.gain.setTargetAtTime(targetGainR, now, 0.1);
+        windRRef.current.filter.frequency.setTargetAtTime(targetFreqR, now, 0.1);
+    }
 
-      animationFrameId = requestAnimationFrame(updateAudio);
-    };
+    // Rustle Logic (Canopy)
+    if (rustleGainRef.current) {
+      // Rustle volume follows the gust intensity strongly
+      // Trees make noise when wind changes/peaks
+      const rustleBase = enabled ? windIntensity * 0.04 : 0;
 
-    updateAudio();
+      // Peak rustle at high gust factors
+      // Use square to accentuate peaks
+      const rustleTarget = rustleBase * (gustFactor * gustFactor);
 
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [isReady, region, enabled, camera]);
+      rustleGainRef.current.gain.setTargetAtTime(rustleTarget, now, 0.2);
+    }
+
+    // Insects logic
+    if (insectsGainRef.current) {
+        const insectBase = enabled ? 0.015 : 0;
+        // Fade out insects as wind increases (realism)
+        // High gust = less insects
+        const windSuppress = Math.max(0, 1.0 - (windIntensity * gustFactor) * 0.8);
+        const insectPulse = 0.8 + Math.sin(time * 8) * 0.2;
+
+        const targetInsect = insectBase * windSuppress * insectPulse;
+        insectsGainRef.current.gain.setTargetAtTime(targetInsect, now, 0.5);
+    }
+  });
 
   // Birds Logic
   useEffect(() => {

@@ -10,6 +10,37 @@ const Terrain = ({ color }) => {
   // Create base color object to avoid re-parsing every frame if it doesn't change
   const baseColor = useMemo(() => new THREE.Color(color), [color]);
 
+  // Generate Procedural Noise Texture for detail
+  const noiseTexture = useMemo(() => {
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Fill with noise
+    const imgData = ctx.createImageData(size, size);
+    const data = imgData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        // High frequency noise biased towards white (rough)
+        // Range 100-255
+        const val = 100 + Math.random() * 155;
+        data[i] = val;     // R
+        data[i+1] = val;   // G
+        data[i+2] = val;   // B
+        data[i+3] = 255;   // Alpha
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(60, 60); // High repeat for fine grain detail
+
+    return texture;
+  }, []);
+
   useLayoutEffect(() => {
     if (!meshRef.current) return;
 
@@ -99,6 +130,9 @@ const Terrain = ({ color }) => {
       <meshStandardMaterial
         vertexColors
         roughness={1}
+        roughnessMap={noiseTexture}
+        bumpMap={noiseTexture}
+        bumpScale={0.15}
         flatShading={false}
       />
     </mesh>

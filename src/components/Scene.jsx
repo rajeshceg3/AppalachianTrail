@@ -165,17 +165,25 @@ const Scene = ({ region, audioEnabled }) => {
     const time = state.clock.getElapsedTime();
     const camY = state.camera.position.y;
 
+    // Cloud Shadow Logic (Slow global light modulation)
+    // 60s period for passing clouds
+    const cloudCycle = Math.sin(time * 0.1);
+    // Cloud cover factor: 0.0 (sunny) to 1.0 (cloudy)
+    const cloudCover = (cloudCycle + 1) * 0.5;
+
     if (fogRef.current) {
       // Breathing fog density
       // Add subtle noise to breathing
       let density = region.fogDensity + Math.sin(time * 0.5) * (region.fogDensity * 0.1) + Math.cos(time * 0.23) * (region.fogDensity * 0.05);
 
       // Height modulation: Less fog as you go up (climbing out of the valley)
-      // Assume typical camera heights are 5-50.
       // Decrease density by up to 60% at height 30 relative to base 5.
       const heightFactor = Math.max(0.4, 1.0 - (Math.max(0, camY - 5) * 0.025));
 
-      fogRef.current.density = density * heightFactor;
+      // Cloud modulation: Fog thickens slightly when cloudy (atmosphere feels heavier/darker)
+      const cloudFogMod = 1.0 + (cloudCover * 0.2);
+
+      fogRef.current.density = density * heightFactor * cloudFogMod;
     }
 
     if (lightRef.current) {
@@ -190,8 +198,13 @@ const Scene = ({ region, audioEnabled }) => {
       // Lerp color
       lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
 
-      // Intensity pulse + slow increase
-      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02 + (warmProgress * 0.2);
+      // Cloud dimming: Reduce sunlight intensity by up to 30% when cloudy
+      const cloudDimming = 1.0 - (cloudCover * 0.3);
+
+      // Intensity pulse + slow increase + cloud shadow
+      const baseIntensity = 1.2 + Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02 + (warmProgress * 0.2);
+
+      lightRef.current.intensity = baseIntensity * cloudDimming;
     }
   });
 

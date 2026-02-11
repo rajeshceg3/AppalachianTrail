@@ -2,11 +2,9 @@
 > appalachian-trail-experience@0.0.0 dev
 > vite
 
+Port 5173 is in use, trying another one...
 
-  VITE v6.4.1  ready in 373 ms
+  VITE v6.4.1  ready in 793 ms
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-1:01:01 PM [vite] (client) page reload verification/verify_scroll.py
-1:01:50 PM [vite] (client) page reload verification/verify_scroll.py
-1:02:29 PM [vite] (client) page reload verification/verify_scroll.py
+  ➜  Local:   http://localhost:9:44:54 AM [vite] (client) page reload progress.md
+9:44:54 AM [vite] (client) page reload progress.md
