@@ -1,8 +1,23 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { getPathX, getTerrainHeight, getTerrainNormal } from '../utils/terrain';
+import { generateNoiseTexture } from '../utils/textureGenerator';
 
 const Path = ({ color }) => {
+  const noiseTexture = useMemo(() => {
+    const t = generateNoiseTexture(512, 512);
+    t.wrapS = THREE.RepeatWrapping;
+    t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(2, 20); // Stretch along the path
+    return t;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      noiseTexture.dispose();
+    };
+  }, [noiseTexture]);
+
   const curve = useMemo(() => {
     // Generate points along the path
     const points = [];
@@ -84,7 +99,10 @@ const Path = ({ color }) => {
     <mesh geometry={geometry} receiveShadow>
       <meshStandardMaterial
         color={color}
-        roughness={0.9}
+        roughness={1}
+        roughnessMap={noiseTexture}
+        bumpMap={noiseTexture}
+        bumpScale={0.02}
         side={THREE.DoubleSide}
         polygonOffset
         polygonOffsetFactor={-1}

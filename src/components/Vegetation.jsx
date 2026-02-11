@@ -2,8 +2,16 @@ import React, { useMemo, useRef, useLayoutEffect } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getTerrainHeight, getPathX, noise2D } from '../utils/terrain';
+import { getTerrainHeight, getPathX, noise2D, createSeededRandom } from '../utils/terrain';
 import { applyWindShader } from '../materials/WindShader';
+
+// Helper to hash string to integer
+const hashCode = (s) => {
+  let h = 0;
+  for(let i = 0; i < s.length; i++)
+        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+  return h;
+}
 
 const TreeCluster = ({ data, region, swaySpeed }) => {
   // Reactive sway based on wind intensity
@@ -124,6 +132,10 @@ const Vegetation = ({ region }) => {
     // Safety limit to prevent infinite loops
     const maxAttempts = treeCount * 10;
 
+    // Create a seeded RNG based on region ID
+    const seed = hashCode(region.id || 'default');
+    const rng = createSeededRandom(seed);
+
     const baseC1 = new THREE.Color(region.treeColor1);
     const baseC2 = new THREE.Color(region.treeColor2);
 
@@ -131,8 +143,8 @@ const Vegetation = ({ region }) => {
       attempts++;
 
       // Spread trees over the full terrain area
-      const z = (Math.random() - 0.5) * 600;
-      const x = (Math.random() - 0.5) * 600;
+      const z = (rng() - 0.5) * 600;
+      const x = (rng() - 0.5) * 600;
 
       // 1. Noise-based Clustering
       const noiseVal = noise2D(x * 0.03, z * 0.03);
@@ -144,18 +156,18 @@ const Vegetation = ({ region }) => {
       const dist = Math.abs(x - pathX);
       const placementProb = Math.max(0, Math.min(1, (dist - 4) / 10));
 
-      if (Math.random() > placementProb) continue;
+      if (rng() > placementProb) continue;
 
       // 3. Placement
       const y = getTerrainHeight(x, z);
-      const scale = 0.5 * Math.exp(Math.random() * 1.3);
-      const rotation = Math.random() * Math.PI * 2;
+      const scale = 0.5 * Math.exp(rng() * 1.3);
+      const rotation = rng() * Math.PI * 2;
       // Random tilt for organic feel (up to ~6 degrees)
-      const tiltX = (Math.random() - 0.5) * 0.2;
-      const tiltZ = (Math.random() - 0.5) * 0.2;
+      const tiltX = (rng() - 0.5) * 0.2;
+      const tiltZ = (rng() - 0.5) * 0.2;
 
-      const mix = Math.random();
-      const variance = 0.9 + Math.random() * 0.2;
+      const mix = rng();
+      const variance = 0.9 + rng() * 0.2;
 
       const c1 = baseC1.clone().lerp(baseC2, mix * 0.3).multiplyScalar(variance);
       const c2 = baseC2.clone().lerp(baseC1, mix * 0.3).multiplyScalar(variance);
