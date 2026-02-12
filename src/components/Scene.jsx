@@ -203,13 +203,14 @@ const Scene = ({ region, audioEnabled }) => {
       <SoftShadows size={25} samples={10} focus={0.5} />
 
       {/* Lighting */}
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.2} />
+      <hemisphereLight groundColor="#504434" skyColor="#b1e1ff" intensity={0.4} />
       <directionalLight
         ref={lightRef}
         position={[20, 30, 10]}
         intensity={1.2}
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0001}
       >
         <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50, 0.5, 100]} />

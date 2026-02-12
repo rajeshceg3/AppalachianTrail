@@ -19,6 +19,15 @@ const random = mulberry32(seed);
 export const noise2D = createNoise2D(random);
 
 /**
+ * Creates a seeded random number generator.
+ * @param {number} seed - The seed for the RNG.
+ * @returns {function} A function that returns a number between 0 and 1.
+ */
+export const createSeededRandom = (seed) => {
+    return mulberry32(seed);
+};
+
+/**
  * Fractal Brownian Motion (FBM)
  * Sums multiple octaves of noise for organic detail.
  */
