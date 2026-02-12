@@ -15,17 +15,30 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000 }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  // Generate a soft particle texture
+  // Generate a soft, organic particle texture (Cloud-like fluff)
   const particleTexture = useMemo(() => {
     const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
+    canvas.width = 64;
+    canvas.height = 64;
     const context = canvas.getContext('2d');
-    const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, 32, 32);
+
+    // Clear
+    context.clearRect(0, 0, 64, 64);
+
+    // Draw multiple soft puffs to create an irregular shape
+    for (let i = 0; i < 8; i++) {
+        const x = 32 + (Math.random() - 0.5) * 20;
+        const y = 32 + (Math.random() - 0.5) * 20;
+        const radius = 10 + Math.random() * 10;
+
+        const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(255,255,255,0.8)'); // Slightly transparent core
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 64, 64);
+    }
+
     const texture = new THREE.CanvasTexture(canvas);
     return texture;
   }, []);
@@ -190,8 +203,23 @@ const Scene = ({ region, audioEnabled }) => {
       // Lerp color
       lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
 
-      // Intensity pulse + slow increase
-      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02 + (warmProgress * 0.2);
+      // Cloud Shadows Logic
+      // Create a slow-moving noise value
+      const cloudNoise = Math.sin(time * 0.1) + Math.sin(time * 0.23) * 0.5 + Math.sin(time * 0.05 + 4) * 0.5;
+      // When noise dips low, we simulate a cloud passing
+      // Map noise (-2 to 2) to a shadow factor (0 to 1)
+      // We want shadows to be occasional, so check for deep troughs
+      const shadowFactor = THREE.MathUtils.smoothstep(-0.5, -1.5, cloudNoise);
+
+      // Base intensity breathing
+      const breathing = Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02;
+
+      // Calculate final target intensity
+      // Base (1.2) + Breathing + Warmup - Shadow
+      // Shadow reduces intensity by up to 50%
+      const intensity = (1.2 + breathing + (warmProgress * 0.2)) * (1.0 - shadowFactor * 0.5);
+
+      lightRef.current.intensity = intensity;
     }
   });
 
