@@ -11,6 +11,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
   const rustleGainRef = useRef(null);
   const insectsGainRef = useRef(null);
+  const creakGainRef = useRef(null);
 
   // Buffers
   const gravelBufferRef = useRef(null);
@@ -180,6 +181,28 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     insectSource.start();
     insectsGainRef.current = insectGain;
 
+    // Tree Creak Layer (Wood stress)
+    const creakSource = ctx.createBufferSource();
+    creakSource.buffer = noiseBuffer;
+    creakSource.loop = true;
+    // Low frequency bandpass for "groaning" wood
+    const creakFilter = ctx.createBiquadFilter();
+    creakFilter.type = 'bandpass';
+    creakFilter.frequency.value = 150;
+    creakFilter.Q.value = 5.0; // High Q for resonant tone
+
+    const creakGain = ctx.createGain();
+    creakGain.gain.value = 0.0;
+
+    // Add distortion for grit
+    const creakShaper = ctx.createWaveShaper();
+    // Simple distortion curve could be added here, but maybe overkill.
+    // Let's just use the filter resonance.
+
+    creakSource.connect(creakFilter).connect(creakGain).connect(ctx.destination);
+    creakSource.start();
+    creakGainRef.current = creakGain;
+
     setIsReady(true);
 
     return () => {
@@ -187,6 +210,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
         windLRef.current?.src.stop();
         windRRef.current?.src.stop();
         insectSource.stop();
+        creakSource.stop();
         ctx.close();
       } catch (e) {}
       setIsReady(false);
@@ -254,6 +278,20 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
         rustleGainRef.current.gain.setTargetAtTime(rustleTarget, now, 0.3);
       }
 
+      // Tree Creak Logic
+      if (creakGainRef.current) {
+          // Creak only happens during high wind stress
+          const stress = Math.max(0, (windIntensity * gustFactor) - 0.7);
+          const creakBase = enabled ? stress * 0.2 : 0;
+
+          // Random modulation to make it intermittent
+          const intermittent = Math.sin(time * 0.5) > 0.5 ? 1 : 0;
+
+          const targetCreak = creakBase * intermittent;
+          // Slower attack/release for heavy wood
+          creakGainRef.current.gain.setTargetAtTime(targetCreak, now, 1.0);
+      }
+
       // Insects logic
       if (insectsGainRef.current) {
           const insectBase = enabled ? 0.015 : 0;
@@ -302,41 +340,57 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
           // Bias towards medium-far (square root distribution)
           const distance = Math.sqrt(Math.random());
 
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
+          // FM Synthesis for Birds
+          const carrier = ctx.createOscillator();
+          const modulator = ctx.createOscillator();
+          const modGain = ctx.createGain();
+
+          const masterGain = ctx.createGain();
           const panner = ctx.createStereoPanner();
           const distFilter = ctx.createBiquadFilter();
 
           // Panning (Random L/R)
           panner.pan.value = (Math.random() * 2) - 1;
 
-          // Distance Filtering (Lowpass)
-          // Close = 12kHz, Far = 800Hz
+          // Distance Filtering
           const cutoff = 800 + (11200 * (1.0 - distance));
           distFilter.type = 'lowpass';
           distFilter.frequency.setValueAtTime(cutoff, t);
 
-          // Distance Attenuation
-          // Close = 0.03, Far = 0.005
+          // Volume
           const peakVol = 0.005 + (0.025 * (1.0 - distance));
 
-          osc.connect(distFilter);
-          distFilter.connect(gain);
-          gain.connect(panner);
+          // Connections: Modulator -> ModGain -> Carrier.freq
+          modulator.connect(modGain);
+          modGain.connect(carrier.frequency);
+
+          carrier.connect(distFilter);
+          distFilter.connect(masterGain);
+          masterGain.connect(panner);
           panner.connect(ctx.destination);
 
-          // Bird Chirp Logic
-          const baseFreq = 2000 + Math.random() * 3000;
-          osc.frequency.setValueAtTime(baseFreq, t);
-          // Slight chirp (pitch drop or rise)
-          osc.frequency.exponentialRampToValueAtTime(baseFreq * (0.9 + Math.random() * 0.2), t + 0.1);
+          // Parameters
+          const baseFreq = 1500 + Math.random() * 2500;
+          const ratio = 2 + Math.random() * 3; // Harmonic ratio
 
-          gain.gain.setValueAtTime(0, t);
-          gain.gain.linearRampToValueAtTime(peakVol, t + 0.05);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+          carrier.frequency.setValueAtTime(baseFreq, t);
+          modulator.frequency.setValueAtTime(baseFreq * ratio, t);
 
-          osc.start(t);
-          osc.stop(t + 0.25);
+          // Modulation Index Envelope (Chirp complexity)
+          const modIndex = 100 + Math.random() * 500;
+          modGain.gain.setValueAtTime(modIndex, t);
+          modGain.gain.exponentialRampToValueAtTime(0.01, t + 0.15); // "Chirp" shape
+
+          // Amplitude Envelope
+          masterGain.gain.setValueAtTime(0, t);
+          masterGain.gain.linearRampToValueAtTime(peakVol, t + 0.02);
+          masterGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+          carrier.start(t);
+          modulator.start(t);
+
+          carrier.stop(t + 0.3);
+          modulator.stop(t + 0.3);
         }
       }
 

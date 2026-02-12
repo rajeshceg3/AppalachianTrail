@@ -59,6 +59,14 @@
   - Implemented banked path geometry conforming to terrain normal.
   - Replaced atmospheric particles with soft, billboarded textures.
   - Removed artificial markers and naturalized lighting modulation.
+  - **Sensory Polish (Socratic Deep-Dive)**:
+    - **Procedural Textures**: Implemented `textureGenerator.js` (Simplex Noise) to add high-frequency grit to `Terrain` and `Path` surfaces, removing the "smooth plastic" look.
+    - **Advanced Audio Synthesis**:
+        - Upgraded birds from simple oscillators to **FM Synthesis** (Carrier-Modulator) for organic, complex chirps.
+        - Added a **Tree Creak** layer (resonant bandpass noise) triggered by high wind gusts for physical presence.
+    - **Dynamic Cloud Shadows**: Implemented a noise-based light intensity modulation cycle to simulate clouds passing overhead.
+    - **Physical Inertia**: Tuned camera movement for dynamic weight (heavy start, sharp stop) and settling motion.
+    - **Organic Particles**: Refined atmospheric particle textures from radial gradients to irregular, cloud-like puffs.
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).

@@ -1,11 +1,21 @@
-import React, { useLayoutEffect, useRef, useMemo } from 'react';
+import React, { useLayoutEffect, useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { getTerrainHeight, noise2D } from '../utils/terrain';
+import { generateNoiseTexture } from '../utils/textureGenerator';
 
 const terrainArgs = [600, 600, 512, 512];
 
 const Terrain = ({ color }) => {
   const meshRef = useRef();
+
+  // Generate high-frequency noise texture for ground detail
+  const texture = useMemo(() => generateNoiseTexture(512, 512), []);
+
+  useEffect(() => {
+    return () => {
+      texture.dispose();
+    };
+  }, [texture]);
 
   // Create base color object to avoid re-parsing every frame if it doesn't change
   const baseColor = useMemo(() => new THREE.Color(color), [color]);
@@ -98,7 +108,10 @@ const Terrain = ({ color }) => {
       <planeGeometry args={terrainArgs} />
       <meshStandardMaterial
         vertexColors
-        roughness={1}
+        roughness={0.8}
+        roughnessMap={texture}
+        bumpMap={texture}
+        bumpScale={0.02}
         flatShading={false}
       />
     </mesh>

@@ -192,7 +192,9 @@ const Controls = ({ audioRef }) => {
 
     // Apply Inertia: Smoothly interpolate current velocity towards target velocity
     // Lower factor = more inertia (slower start/stop)
-    velocity.current.lerp(targetVelocity, delta * 3.0);
+    // We use dynamic inertia: heavy to start (2.0), quicker to stop (5.0) for control
+    const inertiaFactor = targetVelocity.lengthSq() > 0 ? 2.0 : 5.0;
+    velocity.current.lerp(targetVelocity, delta * inertiaFactor);
 
     // Apply movement if there is significant velocity
     if (velocity.current.lengthSq() > 0.001) {
