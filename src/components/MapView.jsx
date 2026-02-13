@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
+import MapAmbience from './MapAmbience';
 
 const RegionNode = ({ region, index, onSelect, isEven }) => {
   return (
@@ -42,104 +43,133 @@ const RegionNode = ({ region, index, onSelect, isEven }) => {
 
 const MapView = ({ regions, onSelectRegion }) => {
   const containerRef = useRef(null);
+  const [isZooming, setIsZooming] = useState(false);
+
+  // Reverse regions to show Maine (North) at top, Georgia (South) at bottom
+  // The user will start at the bottom and scroll up.
+  const reversedRegions = useMemo(() => [...regions].reverse(), [regions]);
+
+  useEffect(() => {
+    // Start at the bottom (South / Georgia)
+    window.scrollTo(0, document.body.scrollHeight);
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"]
   });
 
-  const pathLength = useSpring(scrollYProgress, { stiffness: 400, damping: 90 });
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 400, damping: 90 });
+  // Map scroll (1 -> 0) to path drawing (0 -> 1)
+  // 1 is bottom (start), 0 is top (end)
+  const pathLength = useTransform(smoothProgress, [0.99, 0.01], [0, 1]);
 
-  // Generate path points dynamically based on count
-  // We assume alternating left/right layout (zig-zag)
-  // X coordinates: Left (25%), Right (75%)
-  // Y coordinates: spaced out
+  const handleSelect = (id) => {
+      setIsZooming(true);
+      setTimeout(() => {
+          onSelectRegion(id);
+      }, 1500);
+  };
+
+  // Generate path points dynamically based on reversedRegions (Maine at Top, Georgia at Bottom)
+  // We construct the path from Bottom (Georgia) to Top (Maine) so it draws upwards.
+  const heightPerStep = 400;
+  const totalHeight = reversedRegions.length * heightPerStep;
+
   const generatePath = () => {
       const points = [];
-      const steps = regions.length;
-      const heightPerStep = 400; // Approximate height in SVG units (arbitrary scale)
+      const steps = reversedRegions.length;
 
-      // Start
-      points.push(`M 50 0`);
-
-      regions.forEach((_, i) => {
+      // Start from the Bottom (Last Index)
+      for (let i = steps - 1; i >= 0; i--) {
           const isEven = i % 2 === 0;
-          const x = isEven ? 25 : 75; // Percent
-          const y = (i * heightPerStep) + 200; // Offset start
-          const prevY = ((i-1) * heightPerStep) + 200;
-          const prevX = (i-1) % 2 === 0 ? 25 : 75;
+          const x = isEven ? 25 : 75;
+          const y = (i * heightPerStep) + 200;
 
-          if (i === 0) {
-               // First point curve from center
-               points.push(`C 50 100, ${x} 100, ${x} ${y}`);
+          if (i === steps - 1) {
+              // Start point (Bottom most node)
+              points.push(`M ${x} ${y + 200}`);
+              points.push(`L ${x} ${y}`);
           } else {
-               // Zig Zag curves
-               const midY = (prevY + y) / 2;
-               points.push(`C ${prevX} ${midY}, ${x} ${midY}, ${x} ${y}`);
-          }
-      });
+              // Curve from previous point (which was i+1, lower on screen) to current (i)
+              const prevY = ((i+1) * heightPerStep) + 200;
+              const prevX = (i+1) % 2 === 0 ? 25 : 75;
 
-      // End line fading out
-      const lastX = (regions.length - 1) % 2 === 0 ? 25 : 75;
-      const lastY = ((regions.length - 1) * heightPerStep) + 200;
-      points.push(`L ${lastX} ${lastY + 200}`);
+              const midY = (prevY + y) / 2;
+              points.push(`C ${prevX} ${midY}, ${x} ${midY}, ${x} ${y}`);
+          }
+      }
+
+      // End line fading out at Top
+      const topX = 0 % 2 === 0 ? 25 : 75;
+      const topY = 200;
+      points.push(`L ${topX} ${topY - 200}`);
 
       return points.join(" ");
   };
 
   return (
     <div ref={containerRef} className="w-full relative bg-[#fcfaf7] min-h-screen overflow-hidden">
-        {/* Atmospheric Background Gradient */}
-        <div className="fixed inset-0 bg-gradient-to-b from-stone-50 via-stone-100 to-stone-200 opacity-50 pointer-events-none" />
+        <MapAmbience scrollYProgress={scrollYProgress} />
 
-        <div className="relative max-w-5xl mx-auto pt-32 pb-64">
-             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 2 }}
-                className="text-center mb-32 relative z-10"
-            >
-                <h2 className="text-xs font-light tracking-[0.5em] uppercase text-stone-400">The Path North</h2>
-                <div className="w-px h-16 bg-stone-300 mx-auto mt-8" />
-            </motion.div>
+        <motion.div
+            className="relative w-full h-full"
+            animate={isZooming ? { scale: 1.5, opacity: 0, filter: "blur(10px)" } : { scale: 1, opacity: 1, filter: "blur(0px)" }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+        >
+            {/* Atmospheric Background Gradient */}
+            <div className="fixed inset-0 bg-gradient-to-b from-stone-50 via-stone-100 to-stone-200 opacity-50 pointer-events-none" />
 
-            {/* SVG Path Layer */}
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
-                <svg
-                    width="100%"
-                    height="100%"
-                    viewBox="0 0 100 2400"
-                    preserveAspectRatio="none"
-                    className="opacity-40"
+            <div className="relative max-w-5xl mx-auto pt-32 pb-64">
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 2 }}
+                    className="text-center mb-32 relative z-10"
                 >
-                    <motion.path
-                        d="M 50 100 C 50 300, 25 300, 25 400 C 25 600, 75 600, 75 800 C 75 1000, 25 1000, 25 1200 C 25 1400, 75 1400, 75 1600 C 75 1800, 25 1800, 25 2000 C 25 2200, 50 2200, 50 2400"
-                        stroke="#a8a29e"
-                        strokeWidth="0.5"
-                        fill="none"
-                        style={{ pathLength }}
-                    />
-                </svg>
-            </div>
+                    <h2 className="text-xs font-light tracking-[0.5em] uppercase text-stone-400">The Path North</h2>
+                    <div className="w-px h-16 bg-stone-300 mx-auto mt-8" />
+                </motion.div>
 
-            {/* Regions List */}
-            <div className="relative z-10 space-y-32">
-                {regions.map((region, index) => (
-                    <RegionNode
-                        key={region.id}
-                        region={region}
-                        index={index}
-                        onSelect={onSelectRegion}
-                        isEven={index % 2 === 0}
-                    />
-                ))}
-            </div>
+                {/* SVG Path Layer */}
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
+                    <svg
+                        width="100%"
+                        height="100%"
+                        viewBox={`0 0 100 ${totalHeight}`}
+                        preserveAspectRatio="none"
+                        className="opacity-40"
+                    >
+                        <motion.path
+                            d={generatePath()}
+                            stroke="#a8a29e"
+                            strokeWidth="0.5"
+                            fill="none"
+                            style={{ pathLength }}
+                        />
+                    </svg>
+                </div>
 
-            {/* Footer */}
-            <div className="text-center mt-32">
-                 <div className="text-[10px] tracking-[0.3em] uppercase text-stone-400">Katahdin Awaits</div>
+                {/* Regions List */}
+                <div className="relative z-10 space-y-32">
+                    {reversedRegions.map((region, index) => (
+                        <RegionNode
+                            key={region.id}
+                            region={region}
+                            index={index}
+                            onSelect={handleSelect}
+                            isEven={index % 2 === 0}
+                        />
+                    ))}
+                </div>
+
+                {/* Footer */}
+                <div className="text-center mt-32">
+                    <div className="text-[10px] tracking-[0.3em] uppercase text-stone-400">Katahdin Awaits</div>
+                </div>
             </div>
-        </div>
+        </motion.div>
     </div>
   );
 };
