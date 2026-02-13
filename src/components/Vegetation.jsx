@@ -123,46 +123,121 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
   );
 };
 
+const BroadleafCluster = ({ data, region, swaySpeed }) => {
+  const windIntensity = region.windIntensity || 0.4;
+  const speed = swaySpeed * (0.8 + windIntensity);
+  const amp = 0.15 * (0.5 + windIntensity * 2.0);
+
+  const foliageMaterial1 = useMemo(() => {
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
+      applyWindShader(m, speed, amp);
+      return m;
+  }, [speed, amp]);
+
+  const foliageMaterial2 = useMemo(() => {
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
+      applyWindShader(m, speed, amp * 1.5);
+      return m;
+  }, [speed, amp]);
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time);
+    if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time);
+  });
+
+  return (
+    <group>
+      {/* Trunks - Stouter */}
+      <Instances range={data.length}>
+        <cylinderGeometry args={[0.2, 0.3, 1.5, 6]} />
+        <meshStandardMaterial color="#5c4033" roughness={0.9} />
+        {data.map((d, i) => (
+          <Instance
+            key={`trunk-${i}`}
+            position={[
+              d.position[0],
+              d.position[1] + 0.75 * d.scale,
+              d.position[2]
+            ]}
+            scale={[d.scale, d.scale, d.scale]}
+            rotation={[d.tiltX, d.rotation, d.tiltZ]}
+          />
+        ))}
+      </Instances>
+
+      {/* Foliage Main Clump */}
+      <Instances range={data.length} material={foliageMaterial1}>
+        <dodecahedronGeometry args={[1.5, 0]} />
+        {data.map((d, i) => (
+        <Instance
+            key={`fol1-${i}`}
+            position={[
+              d.position[0],
+              d.position[1] + 2.0 * d.scale,
+              d.position[2]
+            ]}
+            scale={[d.scale, d.scale * 0.8, d.scale]}
+            rotation={[d.tiltX, d.rotation, d.tiltZ]}
+            color={d.color1}
+        />
+        ))}
+      </Instances>
+
+      {/* Foliage Top Clump */}
+      <Instances range={data.length} material={foliageMaterial2}>
+        <dodecahedronGeometry args={[1.0, 0]} />
+        {data.map((d, i) => (
+        <Instance
+            key={`fol2-${i}`}
+            position={[
+              d.position[0],
+              d.position[1] + 3.0 * d.scale,
+              d.position[2]
+            ]}
+            scale={[d.scale, d.scale, d.scale]}
+            rotation={[d.tiltX, d.rotation + 1, d.tiltZ]}
+            color={d.color2}
+        />
+        ))}
+      </Instances>
+    </group>
+  );
+};
+
 const Vegetation = ({ region }) => {
   const treeCount = region.environment === 'forest' ? 2500 : 1000;
 
-  const treeData = useMemo(() => {
-    const data = [];
+  const { conifer, broadleaf } = useMemo(() => {
+    const conifer = [];
+    const broadleaf = [];
     let attempts = 0;
-    // Safety limit to prevent infinite loops
     const maxAttempts = treeCount * 10;
 
-    // Create a seeded RNG based on region ID
     const seed = hashCode(region.id || 'default');
     const rng = createSeededRandom(seed);
 
     const baseC1 = new THREE.Color(region.treeColor1);
     const baseC2 = new THREE.Color(region.treeColor2);
 
-    while (data.length < treeCount && attempts < maxAttempts) {
+    while ((conifer.length + broadleaf.length) < treeCount && attempts < maxAttempts) {
       attempts++;
 
-      // Spread trees over the full terrain area
       const z = (rng() - 0.5) * 600;
       const x = (rng() - 0.5) * 600;
 
-      // 1. Noise-based Clustering
       const noiseVal = noise2D(x * 0.03, z * 0.03);
-
       if (noiseVal < -0.2) continue;
 
-      // 2. Path Avoidance
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
       const placementProb = Math.max(0, Math.min(1, (dist - 4) / 10));
 
       if (rng() > placementProb) continue;
 
-      // 3. Placement
       const y = getTerrainHeight(x, z);
       const scale = 0.5 * Math.exp(rng() * 1.3);
       const rotation = rng() * Math.PI * 2;
-      // Random tilt for organic feel (up to ~6 degrees)
       const tiltX = (rng() - 0.5) * 0.2;
       const tiltZ = (rng() - 0.5) * 0.2;
 
@@ -172,7 +247,7 @@ const Vegetation = ({ region }) => {
       const c1 = baseC1.clone().lerp(baseC2, mix * 0.3).multiplyScalar(variance);
       const c2 = baseC2.clone().lerp(baseC1, mix * 0.3).multiplyScalar(variance);
 
-      data.push({
+      const tree = {
           position: [x, y, z],
           scale,
           rotation,
@@ -180,33 +255,49 @@ const Vegetation = ({ region }) => {
           tiltZ,
           color1: c1,
           color2: c2
-      });
+      };
+
+      // Determine type based on region and randomness
+      // Default to 70% conifer, 30% broadleaf
+      // Adjust per region if needed (hardcoded for now to prove concept)
+      if (rng() > 0.3) {
+        conifer.push(tree);
+      } else {
+        broadleaf.push(tree);
+      }
     }
-    return data;
+    return { conifer, broadleaf };
   }, [region.id, treeCount, region.treeColor1, region.treeColor2]);
 
-  // Split data into chunks
-  const clusters = useMemo(() => {
-    const chunkSize = Math.ceil(treeData.length / 6);
+  // Split conifer data into chunks for variety
+  const coniferClusters = useMemo(() => {
+    const chunkSize = Math.ceil(conifer.length / 4);
     return [
-        treeData.slice(0, chunkSize),
-        treeData.slice(chunkSize, chunkSize * 2),
-        treeData.slice(chunkSize * 2, chunkSize * 3),
-        treeData.slice(chunkSize * 3, chunkSize * 4),
-        treeData.slice(chunkSize * 4, chunkSize * 5),
-        treeData.slice(chunkSize * 5)
+        conifer.slice(0, chunkSize),
+        conifer.slice(chunkSize, chunkSize * 2),
+        conifer.slice(chunkSize * 2, chunkSize * 3),
+        conifer.slice(chunkSize * 3)
     ];
-  }, [treeData]);
+  }, [conifer]);
 
-  // Pass different swaySpeeds to create variety in frequency
+  // Split broadleaf data
+  const broadleafClusters = useMemo(() => {
+    const chunkSize = Math.ceil(broadleaf.length / 2);
+    return [
+        broadleaf.slice(0, chunkSize),
+        broadleaf.slice(chunkSize)
+    ];
+  }, [broadleaf]);
+
   return (
     <>
-      <TreeCluster data={clusters[0]} region={region} swaySpeed={0.5} />
-      <TreeCluster data={clusters[1]} region={region} swaySpeed={0.4} />
-      <TreeCluster data={clusters[2]} region={region} swaySpeed={0.6} />
-      <TreeCluster data={clusters[3]} region={region} swaySpeed={0.45} />
-      <TreeCluster data={clusters[4]} region={region} swaySpeed={0.55} />
-      <TreeCluster data={clusters[5]} region={region} swaySpeed={0.35} />
+      <TreeCluster data={coniferClusters[0]} region={region} swaySpeed={0.5} />
+      <TreeCluster data={coniferClusters[1]} region={region} swaySpeed={0.4} />
+      <TreeCluster data={coniferClusters[2]} region={region} swaySpeed={0.6} />
+      <TreeCluster data={coniferClusters[3]} region={region} swaySpeed={0.45} />
+
+      <BroadleafCluster data={broadleafClusters[0]} region={region} swaySpeed={0.55} />
+      <BroadleafCluster data={broadleafClusters[1]} region={region} swaySpeed={0.35} />
     </>
   );
 };

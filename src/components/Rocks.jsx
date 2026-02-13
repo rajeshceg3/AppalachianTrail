@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import { getTerrainHeight, getPathX, noise2D, createSeededRandom } from '../utils/terrain';
+import { generateNoiseTexture } from '../utils/textureGenerator';
 
 // Helper to hash string to integer
 const hashCode = (s) => {
@@ -73,10 +74,21 @@ const Rocks = ({ region }) => {
     return data;
   }, [region.id, rockCount]);
 
+  const noiseTexture = useMemo(() => {
+    return generateNoiseTexture(256, 256, 4.0);
+  }, []);
+
   return (
     <Instances range={rockCount}>
-      <icosahedronGeometry args={[1, 0]} />
-      <meshStandardMaterial color="#57534e" roughness={0.9} flatShading />
+      <dodecahedronGeometry args={[1, 0]} />
+      <meshStandardMaterial
+        color="#57534e"
+        roughness={0.9}
+        roughnessMap={noiseTexture}
+        bumpMap={noiseTexture}
+        bumpScale={0.15}
+        flatShading
+      />
       {rockData.map((d, i) => (
         <Instance
           key={`rock-${i}`}

@@ -9,10 +9,11 @@ const Terrain = ({ color }) => {
   const meshRef = useRef();
 
   const noiseTexture = useMemo(() => {
-    const t = generateNoiseTexture(512, 512);
+    // Higher resolution and scale to reduce visible tiling pattern
+    const t = generateNoiseTexture(1024, 1024, 8.0);
     t.wrapS = THREE.RepeatWrapping;
     t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(16, 16); // Tile it for high frequency
+    t.repeat.set(8, 8);
     return t;
   }, []);
 

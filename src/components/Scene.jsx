@@ -191,7 +191,7 @@ const Scene = ({ region, audioEnabled }) => {
       lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
 
       // Intensity pulse + slow increase
-      lightRef.current.intensity = 1.2 + Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02 + (warmProgress * 0.2);
+      lightRef.current.intensity = 1.0 + Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02 + (warmProgress * 0.2);
     }
   });
 
@@ -208,7 +208,7 @@ const Scene = ({ region, audioEnabled }) => {
       <directionalLight
         ref={lightRef}
         position={[20, 30, 10]}
-        intensity={1.2}
+        intensity={1.0}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0001}
@@ -232,7 +232,7 @@ const Scene = ({ region, audioEnabled }) => {
             bokehScale={2} /* Blur intensity */
             height={480}
         />
-        <Bloom luminanceThreshold={0.8} mipmapBlur intensity={0.5} radius={0.6} />
+        <Bloom luminanceThreshold={1.0} mipmapBlur intensity={0.5} radius={0.6} />
         <Vignette eskil={false} offset={0.1} darkness={0.4} />
         <Noise opacity={0.02} />
       </EffectComposer>

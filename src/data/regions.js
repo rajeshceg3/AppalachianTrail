@@ -6,7 +6,7 @@ export const regions = [
     details: 'Springer Mountain. Morning air carries the scent of damp earth and new beginnings.',
     color: '#e7e5e4', // Warm stone/white
     fogColor: '#e7e5e4',
-    fogDensity: 0.012,
+    fogDensity: 0.002,
     groundColor: '#7c8a6d', // Greenish
     pathColor: '#8b7355',
     treeColor1: '#2d3a22',
