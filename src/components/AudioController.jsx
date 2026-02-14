@@ -9,6 +9,8 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const windLRef = useRef(null); // { src, filter, gain }
   const windRRef = useRef(null); // { src, filter, gain }
 
+  const droneRef = useRef(null); // { osc, filter, gain }
+
   const rustleGainRef = useRef(null);
   const insectsGainRef = useRef(null);
 
@@ -60,20 +62,22 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     crunchSrc.buffer = gravelBufferRef.current;
 
     // Randomize playback rate for variety
-    crunchSrc.playbackRate.value = 0.8 + Math.random() * 0.4;
+    crunchSrc.playbackRate.value = 0.7 + Math.random() * 0.6; // Wider variation
 
     const crunchFilter = ctx.createBiquadFilter();
     crunchFilter.type = 'bandpass';
-    crunchFilter.frequency.value = 1200 + Math.random() * 400;
+    crunchFilter.frequency.value = 1000 + Math.random() * 600;
     crunchFilter.Q.value = 1.0;
 
     const crunchGain = ctx.createGain();
     crunchGain.gain.setValueAtTime(0.08, t);
-    crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
 
-    crunchSrc.connect(crunchFilter);
-    crunchFilter.connect(crunchGain);
-    crunchGain.connect(ctx.destination);
+    // Subtle stereo spread for footsteps
+    const crunchPanner = ctx.createStereoPanner();
+    crunchPanner.pan.value = (Math.random() - 0.5) * 0.2;
+
+    crunchSrc.connect(crunchFilter).connect(crunchGain).connect(crunchPanner).connect(ctx.destination);
 
     crunchSrc.start(t);
   };
@@ -132,6 +136,22 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     windLRef.current = createWindLayer(-0.6);
     windRRef.current = createWindLayer(0.6);
 
+    // Drone Layer (Atmospheric Tonal Center)
+    const droneOsc = ctx.createOscillator();
+    droneOsc.type = 'triangle'; // Richer than sine
+    // Frequency based on region type? Initial default.
+    droneOsc.frequency.value = 55;
+
+    const droneFilter = ctx.createBiquadFilter();
+    droneFilter.type = 'lowpass';
+    droneFilter.frequency.value = 120; // Dark tone
+
+    const droneGain = ctx.createGain();
+    droneGain.gain.value = 0.0;
+
+    droneOsc.connect(droneFilter).connect(droneGain).connect(ctx.destination);
+    droneOsc.start();
+    droneRef.current = { osc: droneOsc, filter: droneFilter, gain: droneGain };
 
     // Rustle Sound Setup (Leaves/Trees) - "Canopy Layer"
     // Use stereo width but centered logic
@@ -186,6 +206,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       try {
         windLRef.current?.src.stop();
         windRRef.current?.src.stop();
+        droneOsc.stop();
         insectSource.stop();
         ctx.close();
       } catch (e) {}
@@ -211,6 +232,15 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       windIntensity = Math.min(1.2, windIntensity);
 
       const now = ctx.currentTime;
+
+      // Update Drone
+      if (droneRef.current) {
+          const droneBase = enabled ? 0.03 : 0;
+          // Deeper drone for mountains/high wind
+          const targetFreq = region.environment === 'sunset' ? 65 : (region.environment === 'forest' ? 55 : 45);
+          droneRef.current.osc.frequency.setTargetAtTime(targetFreq, now, 0.5);
+          droneRef.current.gain.gain.setTargetAtTime(droneBase, now, 1.0);
+      }
 
       // --- Wind Gust Logic (Synced with Visuals) ---
       // Use similar polyrhythm to visual shader: sin(t*0.5) + sin(t*0.3)

@@ -44,6 +44,9 @@ const RegionNode = ({ region, index, onSelect, isEven }) => {
 const MapView = ({ regions, onSelectRegion }) => {
   const containerRef = useRef(null);
   const [isZooming, setIsZooming] = useState(false);
+  const [hoveredRegionId, setHoveredRegionId] = useState(null);
+
+  const hoveredRegion = useMemo(() => regions.find(r => r.id === hoveredRegionId), [regions, hoveredRegionId]);
 
   // Reverse regions to show Maine (North) at top, Georgia (South) at bottom
   // The user will start at the bottom and scroll up.
@@ -118,7 +121,13 @@ const MapView = ({ regions, onSelectRegion }) => {
             transition={{ duration: 1.5, ease: "easeInOut" }}
         >
             {/* Atmospheric Background Gradient */}
-            <div className="fixed inset-0 bg-gradient-to-b from-stone-50 via-stone-100 to-stone-200 opacity-50 pointer-events-none" />
+            <div className="fixed inset-0 transition-colors duration-1000 ease-in-out pointer-events-none"
+                 style={{
+                     background: hoveredRegion
+                        ? `linear-gradient(to bottom, ${hoveredRegion.color}CC, ${hoveredRegion.fogColor}CC)`
+                        : 'linear-gradient(to bottom, #fafaf9, #f5f5f4)'
+                 }}
+            />
 
             <div className="relative max-w-5xl mx-auto pt-32 pb-64">
                 {/* Header */}
@@ -154,13 +163,18 @@ const MapView = ({ regions, onSelectRegion }) => {
                 {/* Regions List */}
                 <div className="relative z-10 space-y-32">
                     {reversedRegions.map((region, index) => (
-                        <RegionNode
+                        <div
                             key={region.id}
-                            region={region}
-                            index={index}
-                            onSelect={handleSelect}
-                            isEven={index % 2 === 0}
-                        />
+                            onMouseEnter={() => setHoveredRegionId(region.id)}
+                            onMouseLeave={() => setHoveredRegionId(null)}
+                        >
+                            <RegionNode
+                                region={region}
+                                index={index}
+                                onSelect={handleSelect}
+                                isEven={index % 2 === 0}
+                            />
+                        </div>
                     ))}
                 </div>
 

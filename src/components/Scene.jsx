@@ -159,6 +159,11 @@ const Scene = ({ region, audioEnabled }) => {
   const audioRef = useRef(null);
   const fogRef = useRef();
   const lightRef = useRef();
+  const dofRef = useRef();
+
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const screenCenter = useMemo(() => new THREE.Vector2(0, 0), []);
+  const dummyTarget = useMemo(() => new THREE.Vector3(0, 0, 20), []);
 
   // Dynamic atmosphere
   useFrame((state) => {
@@ -175,6 +180,10 @@ const Scene = ({ region, audioEnabled }) => {
       // Decrease density by up to 60% at height 30 relative to base 5.
       const heightFactor = Math.max(0.4, 1.0 - (Math.max(0, camY - 5) * 0.025));
 
+      // Clouds shadow effect on fog (density varies slowly)
+      const cloudNoise = Math.sin(time * 0.1) * 0.1 + Math.sin(time * 0.05 + 10) * 0.1;
+      density *= (1.0 + cloudNoise);
+
       fogRef.current.density = density * heightFactor;
     }
 
@@ -190,8 +199,49 @@ const Scene = ({ region, audioEnabled }) => {
       // Lerp color
       lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
 
-      // Intensity pulse + slow increase
-      lightRef.current.intensity = 1.0 + Math.sin(time * 0.3) * 0.03 + Math.sin(time * 0.7 + 10) * 0.02 + (warmProgress * 0.2);
+      // Cloud Shadows: Modulate intensity
+      const cloudNoise = Math.sin(time * 0.15) * 0.2 + Math.sin(time * 0.05 + 4.0) * 0.15;
+      // Map noise -0.35..0.35 to factor 0.7..1.1
+      const cloudFactor = THREE.MathUtils.mapLinear(cloudNoise, -0.35, 0.35, 0.7, 1.1);
+
+      // Intensity pulse + slow increase + clouds
+      const baseIntensity = 1.0 + Math.sin(time * 0.3) * 0.03 + (warmProgress * 0.2);
+      lightRef.current.intensity = baseIntensity * cloudFactor;
+    }
+
+    // Dynamic Depth of Field Focus
+    if (dofRef.current) {
+        // Set raycaster from camera to center of screen
+        raycaster.setFromCamera(screenCenter, state.camera);
+
+        // Intersect only checking first hit
+        // Note: Intersection can be expensive. We limit ray far to 50 units for performance/relevance.
+        raycaster.far = 50;
+        const intersects = raycaster.intersectObjects(state.scene.children, true);
+
+        let targetPoint = null;
+
+        // Find first visible object
+        for(let i=0; i<intersects.length; i++) {
+             // Basic visibility check (not perfect but helpful)
+             if (intersects[i].object.visible) {
+                 targetPoint = intersects[i].point;
+                 break;
+             }
+        }
+
+        // If nothing hit (sky), focus far away
+        if (!targetPoint) {
+            // Point 50 units ahead
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(state.camera.quaternion).multiplyScalar(50);
+            targetPoint = state.camera.position.clone().add(forward);
+        }
+
+        // Smoothly interpolate current target towards hit point
+        // If dofRef.current.target is undefined, we initialize it
+        if (!dofRef.current.target) dofRef.current.target = dummyTarget.clone();
+
+        dofRef.current.target.lerp(targetPoint, 0.1);
     }
   });
 
@@ -227,7 +277,8 @@ const Scene = ({ region, audioEnabled }) => {
 
       <EffectComposer disableNormalPass>
         <DepthOfField
-            focusDistance={0.02} /* Focus approx 20 units away (assuming far=1000) */
+            ref={dofRef}
+            focusDistance={0.02} /* Fallback/Initial */
             focalLength={0.15} /* Focal length */
             bokehScale={2} /* Blur intensity */
             height={480}

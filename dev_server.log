@@ -3,14 +3,8 @@
 > vite
 
 
-  VITE v6.4.1  ready in 563 ms
+  VITE v6.4.1  ready in 577 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
-8:52:09 PM [vite] (client) hmr update /src/App.jsx, /src/index.css
-8:55:11 PM [vite] (client) page reload verification/verify_immersion.py
-8:57:12 PM [vite] (client) page reload verification/verify_immersion.py
-8:57:56 PM [vite] (client) page reload verification/verify_immersion.py
-9:00:45 PM [vite] (client) hmr update /src/components/Controls.jsx, /src/index.css
-9:01:02 PM [vite] (client) hmr update /src/components/Scene.jsx, /src/index.css
-9:03:23 PM [vite] (client) page reload verification/verify_immersion.py
+9:52:45 AM [vite] (client) page reload verification/verify_map_hover.py
