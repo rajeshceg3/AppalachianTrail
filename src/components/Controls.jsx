@@ -36,6 +36,8 @@ const Controls = ({ audioRef }) => {
 
     // Initialize rotation state from current camera
     currentEuler.current.setFromQuaternion(camera.quaternion);
+    // Start with a slight downward tilt to see the path immediately
+    currentEuler.current.x = -0.1;
     targetEuler.current.copy(currentEuler.current);
 
     const onKeyDown = (event) => {
