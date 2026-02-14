@@ -1,27 +1,34 @@
 import React, { useLayoutEffect, useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { getTerrainHeight, noise2D } from '../utils/terrain';
-import { generateNoiseTexture } from '../utils/textureGenerator';
+import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
 
 const terrainArgs = [600, 600, 512, 512];
 
 const Terrain = ({ color }) => {
   const meshRef = useRef();
 
-  const noiseTexture = useMemo(() => {
+  const { roughnessMap, normalMap } = useMemo(() => {
     // Higher resolution and scale to reduce visible tiling pattern
-    const t = generateNoiseTexture(1024, 1024, 8.0);
-    t.wrapS = THREE.RepeatWrapping;
-    t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(8, 8);
-    return t;
+    const rMap = generateHeightMap(1024, 1024, 8.0, 4);
+    rMap.wrapS = THREE.RepeatWrapping;
+    rMap.wrapT = THREE.RepeatWrapping;
+    rMap.repeat.set(8, 8);
+
+    const nMap = generateNormalMap(1024, 1024, 8.0, 4, 1.0);
+    nMap.wrapS = THREE.RepeatWrapping;
+    nMap.wrapT = THREE.RepeatWrapping;
+    nMap.repeat.set(8, 8);
+
+    return { roughnessMap: rMap, normalMap: nMap };
   }, []);
 
   useEffect(() => {
     return () => {
-      noiseTexture.dispose();
+      roughnessMap.dispose();
+      normalMap.dispose();
     };
-  }, [noiseTexture]);
+  }, [roughnessMap, normalMap]);
 
   // Create base color object to avoid re-parsing every frame if it doesn't change
   const baseColor = useMemo(() => new THREE.Color(color), [color]);
@@ -115,9 +122,9 @@ const Terrain = ({ color }) => {
       <meshStandardMaterial
         vertexColors
         roughness={0.9}
-        roughnessMap={noiseTexture}
-        bumpMap={noiseTexture}
-        bumpScale={0.1}
+        roughnessMap={roughnessMap}
+        normalMap={normalMap}
+        normalScale={new THREE.Vector2(0.5, 0.5)} // Subtle normal
         flatShading={false}
       />
     </mesh>

@@ -33,8 +33,8 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
         #endif
 
         // Height factor (bending increases with height)
-        // Assumes local Y is up and base is at 0.
-        float h = max(0.0, position.y + 0.5);
+        // Assumes local Y is up and base is approx -1.0 for foliage
+        float h = max(0.0, position.y + 1.0);
 
         float time = uTime * uSwaySpeed;
 
@@ -58,6 +58,9 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
 
         transformed.x += swayX;
         transformed.z += swayZ;
+
+        // Arc Correction: Lower Y slightly to simulate rotation around base
+        transformed.y -= (swayX * swayX + swayZ * swayZ) * 0.3;
       `
     );
 

@@ -66,45 +66,45 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
         ))}
       </Instances>
 
-      {/* Foliage Bottom Layer */}
+      {/* Foliage Bottom Layer - Wide Branches */}
       <Instances range={data.length} material={foliageMaterial1}>
-        <coneGeometry args={[1.0, 2.0, 7]} />
+        <dodecahedronGeometry args={[1.5, 0]} />
         {data.map((d, i) => (
         <Instance
             key={`fol1-${i}`}
             position={[
-              d.position[0] - 1.5 * d.scale * d.tiltZ,
-              d.position[1] + 1.5 * d.scale,
-              d.position[2] + 1.5 * d.scale * d.tiltX
+              d.position[0] - 1.2 * d.scale * d.tiltZ,
+              d.position[1] + 1.2 * d.scale,
+              d.position[2] + 1.2 * d.scale * d.tiltX
             ]}
-            scale={[d.scale, d.scale, d.scale]}
+            scale={[d.scale * 1.2, d.scale * 0.5, d.scale * 1.2]}
             rotation={[d.tiltX, d.rotation, d.tiltZ]}
             color={d.color1}
         />
         ))}
       </Instances>
 
-      {/* Foliage Middle Layer */}
+      {/* Foliage Middle Layer - Medium Branches */}
       <Instances range={data.length} material={foliageMaterial2}>
-        <coneGeometry args={[0.7, 1.5, 7]} />
+        <dodecahedronGeometry args={[1.1, 0]} />
         {data.map((d, i) => (
         <Instance
             key={`fol2-${i}`}
             position={[
-              d.position[0] - 2.5 * d.scale * d.tiltZ,
-              d.position[1] + 2.5 * d.scale,
-              d.position[2] + 2.5 * d.scale * d.tiltX
+              d.position[0] - 2.2 * d.scale * d.tiltZ,
+              d.position[1] + 2.2 * d.scale,
+              d.position[2] + 2.2 * d.scale * d.tiltX
             ]}
-            scale={[d.scale, d.scale, d.scale]}
+            scale={[d.scale * 1.0, d.scale * 0.6, d.scale * 1.0]}
             rotation={[d.tiltX, d.rotation + 1, d.tiltZ]}
             color={d.color2}
         />
         ))}
       </Instances>
 
-      {/* Foliage Top Layer */}
+      {/* Foliage Top Layer - Top Cone/Branches */}
       <Instances range={data.length} material={foliageMaterial3}>
-        <coneGeometry args={[0.4, 1.2, 7]} />
+        <dodecahedronGeometry args={[0.8, 0]} />
         {data.map((d, i) => (
         <Instance
             key={`fol3-${i}`}
@@ -113,7 +113,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
               d.position[1] + 3.2 * d.scale,
               d.position[2] + 3.2 * d.scale * d.tiltX
             ]}
-            scale={[d.scale, d.scale, d.scale]}
+            scale={[d.scale * 0.8, d.scale * 0.8, d.scale * 0.8]}
             rotation={[d.tiltX, d.rotation + 2, d.tiltZ]}
             color={d.color1}
         />
@@ -168,7 +168,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 
       {/* Foliage Main Clump */}
       <Instances range={data.length} material={foliageMaterial1}>
-        <dodecahedronGeometry args={[1.5, 0]} />
+        <icosahedronGeometry args={[1.5, 0]} />
         {data.map((d, i) => (
         <Instance
             key={`fol1-${i}`}
@@ -186,7 +186,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 
       {/* Foliage Top Clump */}
       <Instances range={data.length} material={foliageMaterial2}>
-        <dodecahedronGeometry args={[1.0, 0]} />
+        <icosahedronGeometry args={[1.0, 0]} />
         {data.map((d, i) => (
         <Instance
             key={`fol2-${i}`}
