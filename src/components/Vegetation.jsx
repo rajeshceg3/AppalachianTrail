@@ -271,6 +271,7 @@ const Vegetation = ({ region }) => {
 
   // Split conifer data into chunks for variety
   const coniferClusters = useMemo(() => {
+    if (!conifer) return [[], [], [], []];
     const chunkSize = Math.ceil(conifer.length / 4);
     return [
         conifer.slice(0, chunkSize),
@@ -282,6 +283,7 @@ const Vegetation = ({ region }) => {
 
   // Split broadleaf data
   const broadleafClusters = useMemo(() => {
+    if (!broadleaf) return [[], []];
     const chunkSize = Math.ceil(broadleaf.length / 2);
     return [
         broadleaf.slice(0, chunkSize),

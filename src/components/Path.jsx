@@ -8,7 +8,7 @@ const Path = ({ color }) => {
     const t = generateNoiseTexture(512, 512);
     t.wrapS = THREE.RepeatWrapping;
     t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(2, 20); // Stretch along the path
+    t.repeat.set(2, 200); // Stretch along the path
     return t;
   }, []);
 
