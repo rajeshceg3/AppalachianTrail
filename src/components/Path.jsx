@@ -1,22 +1,39 @@
 import React, { useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { getPathX, getTerrainHeight, getTerrainNormal } from '../utils/terrain';
-import { generateNoiseTexture } from '../utils/textureGenerator';
+import { generateHeightMap, generateNormalMap, generateAlphaMap } from '../utils/textureGenerator';
 
 const Path = ({ color }) => {
-  const noiseTexture = useMemo(() => {
-    const t = generateNoiseTexture(512, 512);
-    t.wrapS = THREE.RepeatWrapping;
-    t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(2, 200); // Stretch along the path
-    return t;
+  const { roughnessMap, normalMap, alphaMap } = useMemo(() => {
+    // Generate textures for path
+
+    // Roughness/Detail: High frequency noise for gravel look
+    const rMap = generateHeightMap(512, 512, 10.0, 4);
+    rMap.wrapS = THREE.RepeatWrapping;
+    rMap.wrapT = THREE.RepeatWrapping;
+    rMap.repeat.set(2, 200);
+
+    // Normal Map: Matching frequency but bumping it
+    const nMap = generateNormalMap(512, 512, 10.0, 4, 3.0);
+    nMap.wrapS = THREE.RepeatWrapping;
+    nMap.wrapT = THREE.RepeatWrapping;
+    nMap.repeat.set(2, 200);
+
+    // Alpha Map: Fade edges
+    const aMap = generateAlphaMap(256, 16); // Low res is fine for gradient
+    // Alpha map is mapped to UV. Path UVs are 0..1 across width.
+    // generateAlphaMap handles width gradient.
+
+    return { roughnessMap: rMap, normalMap: nMap, alphaMap: aMap };
   }, []);
 
   useEffect(() => {
     return () => {
-      noiseTexture.dispose();
+      roughnessMap.dispose();
+      normalMap.dispose();
+      alphaMap.dispose();
     };
-  }, [noiseTexture]);
+  }, [roughnessMap, normalMap, alphaMap]);
 
   const curve = useMemo(() => {
     // Generate points along the path
@@ -100,13 +117,15 @@ const Path = ({ color }) => {
       <meshStandardMaterial
         color={color}
         roughness={1}
-        roughnessMap={noiseTexture}
-        bumpMap={noiseTexture}
-        bumpScale={0.02}
+        roughnessMap={roughnessMap}
+        normalMap={normalMap}
+        normalScale={new THREE.Vector2(1, 1)}
+        alphaMap={alphaMap}
+        transparent={true}
         side={THREE.DoubleSide}
         polygonOffset
-        polygonOffsetFactor={-1}
-        polygonOffsetUnits={-1}
+        polygonOffsetFactor={-2} // Increased bias to ensure it sits on top despite transparency
+        polygonOffsetUnits={-2}
       />
     </mesh>
   );

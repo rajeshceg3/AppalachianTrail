@@ -76,6 +76,12 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000 }) => {
         if (dx < -halfRange) dx += range;
         if (dx > halfRange) dx -= range;
 
+        // Turbulence/Curl Noise approximation
+        const turbFreq = 0.05;
+        const turbAmp = 2.0;
+        const tx = Math.sin(time * 0.5 + z * turbFreq + particle.offset) * turbAmp * particle.speed;
+        const ty_turb = Math.cos(time * 0.3 + x * turbFreq + particle.offset) * turbAmp * 0.5;
+
         // Add Sway to X for leaves
         if (type === 'leaves') {
              dx += Math.sin(time + particle.offset) * 2.0;
@@ -108,8 +114,8 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000 }) => {
         }
 
         dummy.position.set(
-            camPos.x + dx,
-            camPos.y + dy,
+            camPos.x + dx + tx,
+            camPos.y + dy + ty_turb,
             camPos.z + dz
         );
 
