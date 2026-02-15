@@ -3,6 +3,7 @@ import { Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX, noise2D, createSeededRandom } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
+import { enhanceMaterial } from '../materials/ShaderEnhancer';
 
 // Helper to hash string to integer
 const hashCode = (s) => {
@@ -114,19 +115,26 @@ const Rocks = ({ region }) => {
     };
   }, [roughnessMap, normalMap]);
 
+  const rockMaterial = useMemo(() => {
+      const m = new THREE.MeshStandardMaterial({
+          color: "#57534e",
+          roughness: 0.9,
+          roughnessMap: roughnessMap,
+          normalMap: normalMap,
+          normalScale: new THREE.Vector2(1, 1),
+          flatShading: true
+      });
+      enhanceMaterial(m, {
+          displacement: { scale: 1.5, strength: 0.15 }
+      });
+      return m;
+  }, [roughnessMap, normalMap]);
+
   return (
     <>
         {/* Large Rocks */}
-        <Instances range={rockCount}>
-        <icosahedronGeometry args={[1, 0]} />
-        <meshStandardMaterial
-            color="#57534e"
-            roughness={0.9}
-            roughnessMap={roughnessMap}
-            normalMap={normalMap}
-            normalScale={new THREE.Vector2(1, 1)}
-            flatShading={false}
-        />
+        <Instances range={rockCount} material={rockMaterial}>
+        <icosahedronGeometry args={[1, 1]} />
         {rocks.map((d, i) => (
             <Instance
             key={`rock-${i}`}
