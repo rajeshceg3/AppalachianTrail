@@ -185,18 +185,57 @@ export function generateAlphaMap(width = 512, height = 512) {
   canvas.height = height;
   const ctx = canvas.getContext('2d');
 
-  // Linear gradient from left (0) to right (1)
-  // Assuming U=0 is left edge, U=1 is right edge of path ribbon.
-  // We want opacity 0 at U=0, opacity 1 at U=0.5, opacity 0 at U=1.
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
 
-  const gradient = ctx.createLinearGradient(0, 0, width, 0);
-  gradient.addColorStop(0, 'black');
-  gradient.addColorStop(0.2, 'white'); // Fast fade in
-  gradient.addColorStop(0.8, 'white'); // Maintain opaque center
-  gradient.addColorStop(1, 'black');
+  // Noise scale for edge roughness
+  const scaleX = 10.0; // Across width
+  const scaleY = 20.0; // Along path length
 
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Normalized coordinates
+      const u = x / width;
+      const v = y / height;
+
+      // Distance from center (0.0 to 0.5)
+      const dist = Math.abs(u - 0.5);
+
+      // Generate noise for edge variance
+      // We map v to a circle to wrap seamlessly along the path length
+      const angle = v * Math.PI * 2;
+      const nx = u * scaleX;
+      const ny = Math.cos(angle) * scaleY; // Use cylinder mapping for seamless loop
+      const nz = Math.sin(angle) * scaleY;
+
+      // Noise value (-1 to 1)
+      const n = fbm4D(nx, ny, nz, 0, 3, 0.5, 2.0);
+
+      // Define edge threshold with noise
+      // Base path width is approx 0.6 of total width (0.2 margin on each side)
+      // We want to transition from 1 (opaque) to 0 (transparent) around dist = 0.3 or 0.4
+      // Perturb the threshold with noise
+      const threshold = 0.35 + n * 0.1; // Variance +/- 0.1
+
+      // Smoothstep for soft edge
+      // If dist < threshold - fade, alpha = 1
+      // If dist > threshold + fade, alpha = 0
+      const fade = 0.05;
+      let alpha = 1.0 - ((dist - (threshold - fade)) / (2 * fade));
+      alpha = Math.max(0, Math.min(1, alpha));
+
+      // Apply to pixel
+      const index = (y * width + x) * 4;
+      const val = Math.floor(alpha * 255);
+
+      data[index] = 255;     // R (White)
+      data[index + 1] = 255; // G
+      data[index + 2] = 255; // B
+      data[index + 3] = val; // Alpha
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
 
   const texture = new THREE.CanvasTexture(canvas);
   // Path is not wrapped horizontally usually, but ribbon might be?

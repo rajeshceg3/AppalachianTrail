@@ -9,157 +9,8 @@ import Path from './Path';
 import AudioController from './AudioController';
 import Vegetation from './Vegetation';
 import Rocks from './Rocks';
+import GPUAtmosphere from './GPUAtmosphere';
 import { getTerrainHeight } from '../utils/terrain';
-
-const AtmosphericParticles = ({ color, type = 'dust', count = 2000 }) => {
-  const meshRef = useRef();
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-
-  // Generate a soft particle texture
-  const particleTexture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const context = canvas.getContext('2d');
-    const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, 32, 32);
-    const texture = new THREE.CanvasTexture(canvas);
-    return texture;
-  }, []);
-
-  // Initial random positions relative to a 100x100 box
-  const particles = useMemo(() => {
-    return Array.from({ length: count }).map(() => ({
-      x: (Math.random() - 0.5) * 100,
-      y: Math.random() * 20, // Height 0 to 20
-      z: (Math.random() - 0.5) * 100,
-      speed: 0.2 + Math.random() * 0.5,
-      offset: Math.random() * 100,
-      baseScale: 0.5 + Math.random() * 1.5, // Varied size for organic look
-      rotationSpeed: (Math.random() - 0.5) * 2
-    }));
-  }, [count]);
-
-  useFrame((state) => {
-    if (!meshRef.current) return;
-    const time = state.clock.elapsedTime;
-    const camPos = state.camera.position;
-
-    particles.forEach((particle, i) => {
-        // Calculate position relative to camera to create infinite field
-        // Box size 200x200 to ensure particles don't pop in/out visibly within fog
-        const range = 200;
-        const halfRange = range / 2;
-
-        let z = particle.z;
-        let x = particle.x;
-
-        // Custom Movement Logic
-        if (type === 'snow' || type === 'leaves') {
-             // Wind drift
-             z += time * particle.speed;
-        } else {
-             // Default wind
-             z += time * particle.speed;
-        }
-
-        // Wrap Z relative to camera
-        let dz = (z - camPos.z) % range;
-        if (dz < -halfRange) dz += range;
-        if (dz > halfRange) dz -= range;
-
-        // Wrap X relative to camera
-        let dx = (x - camPos.x) % range;
-        if (dx < -halfRange) dx += range;
-        if (dx > halfRange) dx -= range;
-
-        // Turbulence/Curl Noise approximation
-        const turbFreq = 0.05;
-        const turbAmp = 2.0;
-        const tx = Math.sin(time * 0.5 + z * turbFreq + particle.offset) * turbAmp * particle.speed;
-        const ty_turb = Math.cos(time * 0.3 + x * turbFreq + particle.offset) * turbAmp * 0.5;
-
-        // Add Sway to X for leaves
-        if (type === 'leaves') {
-             dx += Math.sin(time + particle.offset) * 2.0;
-        }
-
-        // Vertical Movement (Y)
-        // We calculate 'dy' relative to camera height (camPos.y)
-        let dy;
-
-        if (type === 'snow') {
-             // Fast falling
-             const fallSpeed = 3.0 * particle.speed;
-             // Modulo 20 window centered on camera
-             let fallY = -(time * fallSpeed + particle.offset) % 20;
-             // fallY is 0 to -20. Shift to +10 to -10
-             dy = fallY + 10;
-        } else if (type === 'leaves') {
-             // Slow falling
-             const fallSpeed = 1.0 * particle.speed;
-             let fallY = -(time * fallSpeed + particle.offset) % 20;
-             dy = fallY + 10;
-        } else if (type === 'fireflies') {
-             // Floating sine wave
-             // Centered around 0 (-5 to +5 range)
-             dy = (particle.y - 10) + Math.sin(time * 1.0 + particle.offset) * 2.0;
-        } else {
-             // Dust / Mist
-             // Gentle sway
-             dy = (particle.y - 10) + Math.sin(time * 0.5 + particle.offset) * 0.5;
-        }
-
-        dummy.position.set(
-            camPos.x + dx + tx,
-            camPos.y + dy + ty_turb,
-            camPos.z + dz
-        );
-
-        // Rotation
-        if (type === 'leaves') {
-            dummy.rotation.x = time * particle.rotationSpeed;
-            dummy.rotation.z = time * particle.rotationSpeed * 0.5;
-            dummy.rotation.y = time * 0.2;
-        } else {
-            // Billboard: always face camera
-            dummy.quaternion.copy(state.camera.quaternion);
-        }
-
-        // Scale
-        let scale = particle.baseScale * 0.1;
-
-        if (type === 'fireflies') {
-             // Blinking
-             scale *= (0.5 + Math.sin(time * 3 + particle.offset) * 0.5);
-        } else if (type === 'mist') {
-             scale *= 3.0; // Mist is larger
-        }
-
-        dummy.scale.setScalar(scale);
-        dummy.updateMatrix();
-        meshRef.current.setMatrixAt(i, dummy.matrix);
-    });
-    meshRef.current.instanceMatrix.needsUpdate = true;
-  });
-
-  return (
-    <instancedMesh ref={meshRef} args={[null, null, count]}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial
-        color={color}
-        map={particleTexture}
-        transparent
-        opacity={type === 'mist' ? 0.1 : 0.3}
-        depthWrite={false}
-        side={THREE.DoubleSide}
-      />
-    </instancedMesh>
-  );
-};
 
 const Scene = ({ region, audioEnabled }) => {
   const audioRef = useRef(null);
@@ -279,7 +130,7 @@ const Scene = ({ region, audioEnabled }) => {
       <Rocks region={region} />
 
       {/* Atmospheric particles */}
-      <AtmosphericParticles color={region.particles} type={region.particleType} />
+      <GPUAtmosphere color={region.particles} type={region.particleType} />
 
       <EffectComposer disableNormalPass>
         <DepthOfField

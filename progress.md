@@ -59,6 +59,10 @@
   - Implemented banked path geometry conforming to terrain normal.
   - Replaced atmospheric particles with soft, billboarded textures.
   - Removed artificial markers and naturalized lighting modulation.
+  - **Ultra-Realistic Polish**:
+    - Implemented `GPUAtmosphere` for high-performance, noise-driven particle simulation.
+    - Added `ShaderEnhancer` for organic vertex displacement on rocks and vegetation.
+    - Refined path edges with FBM noise for natural blending.
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).

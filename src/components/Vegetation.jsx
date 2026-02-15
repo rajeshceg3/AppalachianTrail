@@ -3,7 +3,7 @@ import { Instances, Instance } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX, noise2D, createSeededRandom } from '../utils/terrain';
-import { applyWindShader } from '../materials/WindShader';
+import { enhanceMaterial } from '../materials/ShaderEnhancer';
 
 // Helper to hash string to integer
 const hashCode = (s) => {
@@ -21,20 +21,29 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
 
   // Create materials with wind shader
   const foliageMaterial1 = useMemo(() => {
-      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
-      applyWindShader(m, speed, amp);
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8, flatShading: true });
+      enhanceMaterial(m, {
+        wind: { speed, amount: amp },
+        displacement: { scale: 3.0, strength: 0.2 }
+      });
       return m;
   }, [speed, amp]);
 
   const foliageMaterial2 = useMemo(() => {
-      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
-      applyWindShader(m, speed, amp * 1.5);
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8, flatShading: true });
+      enhanceMaterial(m, {
+        wind: { speed, amount: amp * 1.5 },
+        displacement: { scale: 3.5, strength: 0.25 }
+      });
       return m;
   }, [speed, amp]);
 
   const foliageMaterial3 = useMemo(() => {
-      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
-      applyWindShader(m, speed, amp * 2.0); // Topmost layer moves most
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8, flatShading: true });
+      enhanceMaterial(m, {
+        wind: { speed, amount: amp * 2.0 },
+        displacement: { scale: 4.0, strength: 0.3 }
+      });
       return m;
   }, [speed, amp]);
 
@@ -68,7 +77,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
 
       {/* Foliage Bottom Layer - Wide Branches */}
       <Instances range={data.length} material={foliageMaterial1}>
-        <dodecahedronGeometry args={[1.5, 0]} />
+        <dodecahedronGeometry args={[1.5, 1]} />
         {data.map((d, i) => (
         <Instance
             key={`fol1-${i}`}
@@ -86,7 +95,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
 
       {/* Foliage Middle Layer - Medium Branches */}
       <Instances range={data.length} material={foliageMaterial2}>
-        <dodecahedronGeometry args={[1.1, 0]} />
+        <dodecahedronGeometry args={[1.1, 1]} />
         {data.map((d, i) => (
         <Instance
             key={`fol2-${i}`}
@@ -104,7 +113,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
 
       {/* Foliage Top Layer - Top Cone/Branches */}
       <Instances range={data.length} material={foliageMaterial3}>
-        <dodecahedronGeometry args={[0.8, 0]} />
+        <dodecahedronGeometry args={[0.8, 1]} />
         {data.map((d, i) => (
         <Instance
             key={`fol3-${i}`}
@@ -129,14 +138,20 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
   const amp = 0.15 * (0.5 + windIntensity * 2.0);
 
   const foliageMaterial1 = useMemo(() => {
-      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
-      applyWindShader(m, speed, amp);
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8, flatShading: true });
+      enhanceMaterial(m, {
+        wind: { speed, amount: amp },
+        displacement: { scale: 2.0, strength: 0.15 }
+      });
       return m;
   }, [speed, amp]);
 
   const foliageMaterial2 = useMemo(() => {
-      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
-      applyWindShader(m, speed, amp * 1.5);
+      const m = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8, flatShading: true });
+      enhanceMaterial(m, {
+        wind: { speed, amount: amp * 1.5 },
+        displacement: { scale: 2.5, strength: 0.2 }
+      });
       return m;
   }, [speed, amp]);
 
@@ -168,7 +183,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 
       {/* Foliage Main Clump */}
       <Instances range={data.length} material={foliageMaterial1}>
-        <icosahedronGeometry args={[1.5, 0]} />
+        <icosahedronGeometry args={[1.5, 1]} />
         {data.map((d, i) => (
         <Instance
             key={`fol1-${i}`}
@@ -186,7 +201,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 
       {/* Foliage Top Clump */}
       <Instances range={data.length} material={foliageMaterial2}>
-        <icosahedronGeometry args={[1.0, 0]} />
+        <icosahedronGeometry args={[1.0, 1]} />
         {data.map((d, i) => (
         <Instance
             key={`fol2-${i}`}
