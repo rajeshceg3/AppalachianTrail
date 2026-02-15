@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getTerrainHeight } from '../utils/terrain';
+import { getTerrainHeight, getPathX } from '../utils/terrain';
 
 const Controls = ({ audioRef }) => {
   const { camera } = useThree();
@@ -208,7 +208,18 @@ const Controls = ({ audioRef }) => {
         const dist = camera.position.distanceTo(lastStepPosition.current);
         if (dist > STEP_DISTANCE) {
             if (audioRef && audioRef.current) {
-                audioRef.current.playFootstep();
+                // Determine surface type based on distance from path center
+                const cx = camera.position.x;
+                const cz = camera.position.z;
+                const pathX = getPathX(cz);
+                const distToPath = Math.abs(cx - pathX);
+
+                // Path visual width is roughly ~5 units.
+                // Threshold of 3.5 gives a bit of leeway for the gravel fade-out.
+                const surface = distToPath < 3.5 ? 'gravel' : 'grass';
+
+                audioRef.current.playFootstep(surface);
+                audioRef.current.playGearRustle();
             }
             lastStepPosition.current.copy(camera.position);
         }

@@ -170,6 +170,8 @@ const Scene = ({ region, audioEnabled }) => {
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const screenCenter = useMemo(() => new THREE.Vector2(0, 0), []);
   const dummyTarget = useMemo(() => new THREE.Vector3(0, 0, 20), []);
+  const frameCount = useRef(0);
+  const targetPointRef = useRef(new THREE.Vector3(0, 0, 20));
 
   // Dynamic atmosphere
   useFrame((state) => {
@@ -217,37 +219,39 @@ const Scene = ({ region, audioEnabled }) => {
 
     // Dynamic Depth of Field Focus
     if (dofRef.current) {
-        // Set raycaster from camera to center of screen
-        raycaster.setFromCamera(screenCenter, state.camera);
+        frameCount.current++;
 
-        // Intersect only checking first hit
-        // Note: Intersection can be expensive. We limit ray far to 50 units for performance/relevance.
-        raycaster.far = 50;
-        const intersects = raycaster.intersectObjects(state.scene.children, true);
+        // Raycast only every 15 frames for performance
+        if (frameCount.current % 15 === 0) {
+            // Set raycaster from camera to center of screen
+            raycaster.setFromCamera(screenCenter, state.camera);
+            raycaster.far = 50;
+            const intersects = raycaster.intersectObjects(state.scene.children, true);
 
-        let targetPoint = null;
+            let hit = null;
+            // Find first visible object
+            for(let i=0; i<intersects.length; i++) {
+                 // Ignore particles or invisible objects
+                 if (intersects[i].object.visible && intersects[i].object.type !== 'Points') {
+                     hit = intersects[i].point;
+                     break;
+                 }
+            }
 
-        // Find first visible object
-        for(let i=0; i<intersects.length; i++) {
-             // Basic visibility check (not perfect but helpful)
-             if (intersects[i].object.visible) {
-                 targetPoint = intersects[i].point;
-                 break;
-             }
+            if (hit) {
+                targetPointRef.current.copy(hit);
+            } else {
+                // Default far focus if looking at sky
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(state.camera.quaternion).multiplyScalar(50);
+                targetPointRef.current.copy(state.camera.position).add(forward);
+            }
         }
 
-        // If nothing hit (sky), focus far away
-        if (!targetPoint) {
-            // Point 50 units ahead
-            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(state.camera.quaternion).multiplyScalar(50);
-            targetPoint = state.camera.position.clone().add(forward);
-        }
-
-        // Smoothly interpolate current target towards hit point
-        // If dofRef.current.target is undefined, we initialize it
+        // Smoothly interpolate current target towards hit point every frame
         if (!dofRef.current.target) dofRef.current.target = dummyTarget.clone();
 
-        dofRef.current.target.lerp(targetPoint, 0.1);
+        // Slower lerp (0.05) for very stable focus
+        dofRef.current.target.lerp(targetPointRef.current, 0.05);
     }
   });
 
