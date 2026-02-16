@@ -20,7 +20,7 @@ const Path = ({ color }) => {
     nMap.repeat.set(2, 200);
 
     // Alpha Map: Fade edges
-    const aMap = generateAlphaMap(256, 16); // Low res is fine for gradient
+    const aMap = generateAlphaMap(256, 256); // Higher res for noise detail along path
     // Alpha map is mapped to UV. Path UVs are 0..1 across width.
     // generateAlphaMap handles width gradient.
 

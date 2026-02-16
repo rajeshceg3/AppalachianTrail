@@ -1,57 +1,72 @@
 from playwright.sync_api import sync_playwright
 import time
+import sys
 
-def run(playwright):
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context(viewport={'width': 1280, 'height': 720})
-    page = context.new_page()
+def verify_visuals():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--enable-unsafe-swiftshader", "--use-gl=swiftshader", "--no-sandbox"]
+        )
+        page = browser.new_page()
+        page.set_default_timeout(120000) # 2 min timeout
 
-    page.on("console", lambda msg: print(f"Console: {msg.text}"))
+        # Capture console logs and print to stdout immediately
+        page.on("console", lambda msg: print(f"PAGE LOG: {msg.text}", file=sys.stdout))
+        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}", file=sys.stderr))
 
-    print("Navigating to app...")
-    page.goto("http://localhost:5173")
+        try:
+            print("Navigating...")
+            page.goto("http://localhost:5173")
 
-    # Landing Page
-    print("Waiting for Begin button...")
-    try:
-        page.wait_for_selector("button", timeout=15000)
-        buttons = page.query_selector_all("button")
-        found = False
-        for btn in buttons:
-            if "Begin" in btn.inner_text() or "BEGIN" in btn.inner_text():
-                print("Clicking Begin...")
-                btn.click()
-                found = True
-                break
-        if not found and buttons:
-            buttons[0].click()
-    except Exception as e:
-         print(f"Error on landing: {e}")
-         page.screenshot(path="verification/error_landing.png")
-         return
+            print("Waiting for Begin button...")
+            begin_btn = page.get_by_text("Begin")
+            begin_btn.wait_for()
+            begin_btn.click()
 
-    # Map View
-    print("Waiting for Georgia region...")
-    try:
-        page.wait_for_selector("text=Georgia", timeout=15000)
-        print("Clicking Georgia...")
-        page.click("text=Georgia")
-    except Exception as e:
-        print(f"Error on map view: {e}")
-        # Take screenshot for debugging
-        page.screenshot(path="verification/error_map.png")
-        return
+            print("Waiting for Map View...")
+            page.wait_for_timeout(5000)
 
-    # Experience View
-    print("Waiting for Scene to load...")
-    time.sleep(15) # Wait for scene to load and stabilize
+            print("Clicking region 'Georgia'...")
+            # Try to force click if hidden/obscured, or scroll into view
+            georgia = page.get_by_text("Georgia").first
+            georgia.scroll_into_view_if_needed()
+            georgia.click()
 
-    print("Taking screenshot...")
-    page.screenshot(path="verification/visuals_check.png")
+            print("Waiting for Canvas...")
+            page.wait_for_selector("canvas")
+            print("Canvas found. Experience started.")
 
-    browser.close()
-    print("Verification script completed.")
+            # Wait for terrain generation and stabilization
+            print("Waiting 10s for generation...")
+            time.sleep(10)
+
+            # Take initial screenshot
+            page.screenshot(path="verification/visual_check_initial.png")
+            print("Initial screenshot saved.")
+
+            # Try to move camera
+            print("Moving camera...")
+            page.keyboard.press("ArrowUp")
+            time.sleep(0.5)
+            page.keyboard.press("ArrowUp")
+            time.sleep(0.5)
+            page.keyboard.press("ArrowUp") # Move forward
+
+            time.sleep(2)
+
+            # Take screenshot
+            page.screenshot(path="verification/visual_check_moved.png")
+            print("Moved screenshot saved.")
+
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+            try:
+                page.screenshot(path="verification/error_check.png")
+            except:
+                pass
+
+        browser.close()
 
 if __name__ == "__main__":
-    with sync_playwright() as playwright:
-        run(playwright)
+    verify_visuals()

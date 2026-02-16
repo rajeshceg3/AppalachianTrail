@@ -235,7 +235,8 @@ const Vegetation = ({ region }) => {
 
       if (rng() > placementProb) continue;
 
-      const y = getTerrainHeight(x, z);
+      // Sink deeper to hide intersection
+      const y = getTerrainHeight(x, z) - (0.1 + rng() * 0.3);
       const scale = 0.5 * Math.exp(rng() * 1.3);
       const rotation = rng() * Math.PI * 2;
       const tiltX = (rng() - 0.5) * 0.2;
@@ -243,9 +244,10 @@ const Vegetation = ({ region }) => {
 
       const mix = rng();
       const variance = 0.9 + rng() * 0.2;
+      const hueShift = (rng() - 0.5) * 0.08; // Subtle hue shift
 
-      const c1 = baseC1.clone().lerp(baseC2, mix * 0.3).multiplyScalar(variance);
-      const c2 = baseC2.clone().lerp(baseC1, mix * 0.3).multiplyScalar(variance);
+      const c1 = baseC1.clone().lerp(baseC2, mix * 0.3).multiplyScalar(variance).offsetHSL(hueShift, 0, 0);
+      const c2 = baseC2.clone().lerp(baseC1, mix * 0.3).multiplyScalar(variance).offsetHSL(hueShift, 0, 0);
 
       const tree = {
           position: [x, y, z],
