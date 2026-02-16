@@ -10,6 +10,7 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const windRRef = useRef(null); // { src, filter, gain }
 
   const droneRef = useRef(null); // { osc, filter, gain }
+  const reverbRef = useRef(null); // ConvolverNode
 
   const rustleGainRef = useRef(null);
   const insectsGainRef = useRef(null);
@@ -21,8 +22,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
-    playFootstep: () => {
-      if (enabled) triggerFootstep();
+    playFootstep: (surface = 'gravel') => {
+      if (enabled) triggerFootstep(surface);
+    },
+    playGearRustle: () => {
+      if (enabled) triggerGearRustle();
     },
     resume: () => {
       if (audioContextRef.current?.state === 'suspended') {
@@ -31,7 +35,42 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     }
   }));
 
-  const triggerFootstep = () => {
+  const triggerGearRustle = () => {
+    if (!audioContextRef.current || !gravelBufferRef.current) return;
+    const ctx = audioContextRef.current;
+    const t = ctx.currentTime;
+
+    // Filtered noise for fabric/gear movement
+    const src = ctx.createBufferSource();
+    src.buffer = gravelBufferRef.current;
+    // Lower playback rate for deeper "shhh" sound
+    src.playbackRate.value = 0.4 + Math.random() * 0.2;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 400 + Math.random() * 100;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    // Double bump envelope for "swish-swish" effect sometimes? No, simple swish.
+    gain.gain.linearRampToValueAtTime(0.03 + Math.random() * 0.02, t + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+    // Subtle pan
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = (Math.random() - 0.5) * 0.3;
+
+    src.connect(filter).connect(gain).connect(panner).connect(ctx.destination);
+    // Minimal reverb for gear (close to body)
+    if (reverbRef.current) {
+        const gearRevGain = ctx.createGain();
+        gearRevGain.gain.value = 0.1;
+        panner.connect(gearRevGain).connect(reverbRef.current);
+    }
+    src.start(t);
+  };
+
+  const triggerFootstep = (surface) => {
     if (!audioContextRef.current || !gravelBufferRef.current) return;
     const ctx = audioContextRef.current;
 
@@ -41,43 +80,71 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
     const t = ctx.currentTime;
 
-    // 1. Low Thud (Impact)
+    // 1. Low Thud (Impact) - Shared but tweaked by surface
     const thudOsc = ctx.createOscillator();
     thudOsc.type = 'sine';
-    thudOsc.frequency.setValueAtTime(80, t);
-    thudOsc.frequency.exponentialRampToValueAtTime(30, t + 0.1);
 
     const thudGain = ctx.createGain();
-    thudGain.gain.setValueAtTime(0.15, t); // Slightly louder
-    thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+    if (surface === 'grass') {
+        // Softer, deeper thud
+        thudOsc.frequency.setValueAtTime(60, t);
+        thudOsc.frequency.exponentialRampToValueAtTime(20, t + 0.15);
+        thudGain.gain.setValueAtTime(0.1, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    } else {
+        // Harder gravel thud
+        thudOsc.frequency.setValueAtTime(80, t);
+        thudOsc.frequency.exponentialRampToValueAtTime(30, t + 0.1);
+        thudGain.gain.setValueAtTime(0.15, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    }
 
     thudOsc.connect(thudGain);
     thudGain.connect(ctx.destination);
 
     thudOsc.start(t);
-    thudOsc.stop(t + 0.15);
+    thudOsc.stop(t + 0.2);
 
-    // 2. Gravel Crunch (High Frequency Noise)
+    // 2. Surface Texture
     const crunchSrc = ctx.createBufferSource();
     crunchSrc.buffer = gravelBufferRef.current;
 
-    // Randomize playback rate for variety
-    crunchSrc.playbackRate.value = 0.7 + Math.random() * 0.6; // Wider variation
-
     const crunchFilter = ctx.createBiquadFilter();
-    crunchFilter.type = 'bandpass';
-    crunchFilter.frequency.value = 1000 + Math.random() * 600;
-    crunchFilter.Q.value = 1.0;
-
     const crunchGain = ctx.createGain();
-    crunchGain.gain.setValueAtTime(0.08, t);
-    crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+    if (surface === 'grass') {
+        // Grass: Muffled, lower pitch, less gain
+        crunchSrc.playbackRate.value = 0.5 + Math.random() * 0.3;
+
+        crunchFilter.type = 'lowpass';
+        crunchFilter.frequency.value = 600 + Math.random() * 200;
+
+        crunchGain.gain.setValueAtTime(0.04, t);
+        crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    } else {
+        // Gravel: Crisp, bandpass, higher gain
+        crunchSrc.playbackRate.value = 0.7 + Math.random() * 0.6;
+
+        crunchFilter.type = 'bandpass';
+        crunchFilter.frequency.value = 1000 + Math.random() * 600;
+        crunchFilter.Q.value = 1.0;
+
+        crunchGain.gain.setValueAtTime(0.08, t);
+        crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    }
 
     // Subtle stereo spread for footsteps
     const crunchPanner = ctx.createStereoPanner();
     crunchPanner.pan.value = (Math.random() - 0.5) * 0.2;
 
     crunchSrc.connect(crunchFilter).connect(crunchGain).connect(crunchPanner).connect(ctx.destination);
+
+    // Send footsteps to reverb
+    if (reverbRef.current) {
+        crunchPanner.connect(reverbRef.current);
+        thudGain.connect(reverbRef.current);
+    }
 
     crunchSrc.start(t);
   };
@@ -87,6 +154,36 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioContext();
     audioContextRef.current = ctx;
+
+    // --- Convolution Reverb Setup ---
+    const convolver = ctx.createConvolver();
+    const reverbGain = ctx.createGain();
+    reverbGain.gain.value = 0.4; // Wet mix
+
+    // Generate Impulse Response (Forest Decay)
+    const irDuration = 2.5;
+    const irRate = ctx.sampleRate;
+    const irLength = irRate * irDuration;
+    const irBuffer = ctx.createBuffer(2, irLength, irRate);
+    const leftIR = irBuffer.getChannelData(0);
+    const rightIR = irBuffer.getChannelData(1);
+
+    for (let i = 0; i < irLength; i++) {
+        // Exponential decay
+        const t = i / irRate;
+        // -3.0 decay constant is roughly -60dB over 2.3s
+        const decay = Math.exp(-3.0 * t);
+
+        // Noise burst
+        leftIR[i] = (Math.random() * 2 - 1) * decay;
+        rightIR[i] = (Math.random() * 2 - 1) * decay;
+    }
+    convolver.buffer = irBuffer;
+
+    // Route reverb to destination
+    convolver.connect(reverbGain).connect(ctx.destination);
+    reverbRef.current = convolver;
+
 
     // Create Noise Buffer (shared for wind/ambience)
     const bufferSize = 2 * ctx.sampleRate;
@@ -127,6 +224,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
         panner.pan.value = pan;
 
         src.connect(filter).connect(gain).connect(panner).connect(ctx.destination);
+        // Send wind to reverb (subtle)
+        const send = ctx.createGain();
+        send.gain.value = 0.2;
+        panner.connect(send).connect(convolver);
+
         src.start();
 
         return { src, filter, gain };
@@ -150,6 +252,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     droneGain.gain.value = 0.0;
 
     droneOsc.connect(droneFilter).connect(droneGain).connect(ctx.destination);
+    // Send drone to reverb for huge space
+    const droneSend = ctx.createGain();
+    droneSend.gain.value = 0.5;
+    droneGain.connect(droneSend).connect(convolver);
+
     droneOsc.start();
     droneRef.current = { osc: droneOsc, filter: droneFilter, gain: droneGain };
 
@@ -177,6 +284,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
         panner.pan.value = 0;
 
         src.connect(highPass).connect(lowPass).connect(gain).connect(panner).connect(ctx.destination);
+        // Send rustle to reverb
+        const send = ctx.createGain();
+        send.gain.value = 0.3;
+        panner.connect(send).connect(convolver);
+
         src.start();
         return gain;
     }
@@ -197,6 +309,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     insectGain.gain.value = 0.0;
 
     insectSource.connect(insectFilter).connect(insectGain).connect(ctx.destination);
+    // Insects reverb
+    const insectSend = ctx.createGain();
+    insectSend.gain.value = 0.2;
+    insectGain.connect(insectSend).connect(convolver);
+
     insectSource.start();
     insectsGainRef.current = insectGain;
 
@@ -354,6 +471,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
           distFilter.connect(gain);
           gain.connect(panner);
           panner.connect(ctx.destination);
+
+          if (reverbRef.current) {
+              // Birds get lots of reverb (far away)
+              panner.connect(reverbRef.current);
+          }
 
           // Bird Chirp Logic
           const baseFreq = 2000 + Math.random() * 3000;
