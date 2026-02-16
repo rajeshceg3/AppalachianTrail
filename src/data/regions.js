@@ -15,7 +15,8 @@ export const regions = [
     particleType: 'fireflies',
     environment: 'forest',
     windIntensity: 0.4,
-    birdActivity: 0.6
+    birdActivity: 0.6,
+    waterProbability: 0.5
   },
   {
     id: 'smokies',
@@ -33,7 +34,8 @@ export const regions = [
     particleType: 'mist',
     environment: 'park',
     windIntensity: 0.6,
-    birdActivity: 0.4
+    birdActivity: 0.4,
+    waterProbability: 0.8
   },
   {
     id: 'virginia',
@@ -51,7 +53,8 @@ export const regions = [
     particleType: 'dust',
     environment: 'park',
     windIntensity: 0.5,
-    birdActivity: 0.7
+    birdActivity: 0.7,
+    waterProbability: 0.4
   },
   {
     id: 'mid-atlantic',
@@ -69,7 +72,8 @@ export const regions = [
     particleType: 'dust',
     environment: 'forest',
     windIntensity: 0.3,
-    birdActivity: 0.8
+    birdActivity: 0.8,
+    waterProbability: 0.2
   },
   {
     id: 'new-england',
@@ -87,7 +91,8 @@ export const regions = [
     particleType: 'leaves',
     environment: 'sunset',
     windIntensity: 0.7,
-    birdActivity: 0.3
+    birdActivity: 0.3,
+    waterProbability: 0.6
   },
   {
     id: 'maine',
@@ -105,6 +110,7 @@ export const regions = [
     particleType: 'snow',
     environment: 'park',
     windIntensity: 0.9,
-    birdActivity: 0.1
+    birdActivity: 0.1,
+    waterProbability: 0.9
   }
 ];

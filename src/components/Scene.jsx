@@ -207,14 +207,22 @@ const Scene = ({ region, audioEnabled }) => {
       // Lerp color
       lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
 
+      // Dynamic Sun Position (Simulate passage of time)
+      // Start at [20, 30, 10], Move slowly towards [-20, 20, 10]
+      const sunX = THREE.MathUtils.lerp(20, -20, time / 300); // 5 minutes to cross
+      const sunY = THREE.MathUtils.lerp(30, 20, time / 300);
+      lightRef.current.position.set(sunX, sunY, 10);
+
       // Cloud Shadows: Modulate intensity
-      const cloudNoise = Math.sin(time * 0.15) * 0.2 + Math.sin(time * 0.05 + 4.0) * 0.15;
-      // Map noise -0.35..0.35 to factor 0.7..1.1
-      const cloudFactor = THREE.MathUtils.mapLinear(cloudNoise, -0.35, 0.35, 0.7, 1.1);
+      // Increased contrast for dynamic lighting
+      const cloudNoise = Math.sin(time * 0.1) * 0.3 + Math.sin(time * 0.03 + 4.0) * 0.3;
+      // Map noise -0.6..0.6 to factor 0.4..1.2
+      // 0.4 = deep shadow, 1.2 = bright sun burst
+      const cloudFactor = THREE.MathUtils.mapLinear(cloudNoise, -0.6, 0.6, 0.4, 1.2);
 
       // Intensity pulse + slow increase + clouds
       const baseIntensity = 1.0 + Math.sin(time * 0.3) * 0.03 + (warmProgress * 0.2);
-      lightRef.current.intensity = baseIntensity * cloudFactor;
+      lightRef.current.intensity = Math.max(0.1, baseIntensity * cloudFactor);
     }
 
     // Dynamic Depth of Field Focus

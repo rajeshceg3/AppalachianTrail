@@ -29,6 +29,8 @@ const Controls = ({ audioRef }) => {
   // Bank (roll) state
   const bankRef = useRef(0);
   const targetBankRef = useRef(0);
+  // Uneven footing
+  const wobbleRef = useRef(0);
 
   useEffect(() => {
     // Initialize last step position
@@ -187,9 +189,29 @@ const Controls = ({ audioRef }) => {
     if (moveForward.current) targetVelocity.add(forward);
     if (moveBackward.current) targetVelocity.sub(forward);
 
+    // Dynamic Speed based on Slope
+    let currentWalkSpeed = WALK_SPEED;
+    // Check slope ahead if moving
+    if (targetVelocity.lengthSq() > 0) {
+        const dir = targetVelocity.clone().normalize();
+        const lookAhead = 1.0;
+        const nextPos = camera.position.clone().add(dir.multiplyScalar(lookAhead));
+        const currH = getTerrainHeight(camera.position.x, camera.position.z);
+        const nextH = getTerrainHeight(nextPos.x, nextPos.z);
+        const slope = (nextH - currH) / lookAhead;
+
+        // Uphill (slope > 0): Slower
+        // Downhill (slope < 0): Faster
+        if (slope > 0) {
+             currentWalkSpeed = WALK_SPEED / (1.0 + slope * 3.0);
+        } else {
+             currentWalkSpeed = WALK_SPEED * (1.0 - slope * 0.5);
+        }
+    }
+
     // Normalize and scale to walk speed
     if (targetVelocity.lengthSq() > 0) {
-        targetVelocity.normalize().multiplyScalar(WALK_SPEED);
+        targetVelocity.normalize().multiplyScalar(currentWalkSpeed);
     }
 
     // Apply Inertia: Smoothly interpolate current velocity towards target velocity
@@ -199,6 +221,12 @@ const Controls = ({ audioRef }) => {
     // Apply movement if there is significant velocity
     if (velocity.current.lengthSq() > 0.001) {
         camera.position.addScaledVector(velocity.current, delta);
+
+        // Uneven Footing Wobble
+        // Add random small impulses to wobble
+        if (Math.random() < 0.05) {
+             wobbleRef.current += (Math.random() - 0.5) * 0.015;
+        }
 
         // Head bob logic based on speed
         const speed = velocity.current.length();
@@ -266,8 +294,11 @@ const Controls = ({ audioRef }) => {
     // Smoothly interpolate actual bank towards target
     bankRef.current = THREE.MathUtils.lerp(bankRef.current, targetBankRef.current, delta * 5); // Slower bank smoothing
 
+    // Decay wobble
+    wobbleRef.current = THREE.MathUtils.lerp(wobbleRef.current, 0, delta * 4.0);
+
     // Apply banking (Z) to currentEuler
-    currentEuler.current.z = bankRef.current + breathZ;
+    currentEuler.current.z = bankRef.current + breathZ + wobbleRef.current;
 
     // Apply final rotation to camera
     camera.quaternion.setFromEuler(currentEuler.current);
