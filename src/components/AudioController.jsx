@@ -14,6 +14,8 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
   const rustleGainRef = useRef(null);
   const insectsGainRef = useRef(null);
+  const waterGainRef = useRef(null);
+  const windBassRef = useRef(null); // { gain }
 
   // Buffers
   const gravelBufferRef = useRef(null);
@@ -317,6 +319,61 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     insectSource.start();
     insectsGainRef.current = insectGain;
 
+    // Water Sound Setup (Stream/Brook)
+    // Uses modulated filter on noise to create "gurgle"
+    const waterSrc = ctx.createBufferSource();
+    waterSrc.buffer = noiseBuffer;
+    waterSrc.loop = true;
+
+    const waterFilter = ctx.createBiquadFilter();
+    waterFilter.type = 'lowpass';
+    waterFilter.frequency.value = 500;
+    waterFilter.Q.value = 0.5;
+
+    const waterGain = ctx.createGain();
+    waterGain.gain.value = 0.0;
+
+    // LFO for "Flow" texture
+    const waterLFO = ctx.createOscillator();
+    waterLFO.type = 'sine';
+    waterLFO.frequency.value = 0.2; // Slow flow
+
+    const waterLFOGain = ctx.createGain();
+    waterLFOGain.gain.value = 150; // Modulate filter cutoff
+
+    waterLFO.connect(waterLFOGain).connect(waterFilter.frequency);
+    waterLFO.start();
+
+    // Random placement
+    const waterPanner = ctx.createStereoPanner();
+    waterPanner.pan.value = (Math.random() - 0.5) * 0.6;
+
+    waterSrc.connect(waterFilter).connect(waterGain).connect(waterPanner).connect(ctx.destination);
+
+    // Send water to reverb
+    const waterSend = ctx.createGain();
+    waterSend.gain.value = 0.3;
+    waterPanner.connect(waterSend).connect(convolver);
+
+    waterSrc.start();
+    waterGainRef.current = waterGain;
+
+    // Wind Bass Layer (Rumble/Pressure)
+    const bassSrc = ctx.createBufferSource();
+    bassSrc.buffer = noiseBuffer;
+    bassSrc.loop = true;
+
+    const bassFilter = ctx.createBiquadFilter();
+    bassFilter.type = 'lowpass';
+    bassFilter.frequency.value = 80;
+
+    const bassGain = ctx.createGain();
+    bassGain.gain.value = 0.0;
+
+    bassSrc.connect(bassFilter).connect(bassGain).connect(ctx.destination);
+    bassSrc.start();
+    windBassRef.current = bassGain;
+
     setIsReady(true);
 
     return () => {
@@ -325,6 +382,9 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
         windRRef.current?.src.stop();
         droneOsc.stop();
         insectSource.stop();
+        waterSrc.stop();
+        waterLFO.stop();
+        bassSrc.stop();
         ctx.close();
       } catch (e) {}
       setIsReady(false);
@@ -387,6 +447,14 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
          windRRef.current.filter.frequency.setTargetAtTime(targetFreqR, now, 0.5);
       }
 
+      // Wind Bass (Rumble)
+      if (windBassRef.current) {
+          // Only audible when wind is strong (>0.4)
+          const bassBase = enabled ? Math.max(0, (windIntensity - 0.4) * 0.15) : 0;
+          const bassTarget = bassBase * (gustFactor * gustFactor);
+          windBassRef.current.gain.setTargetAtTime(bassTarget, now, 0.4);
+      }
+
       // Rustle Logic (Canopy)
       if (rustleGainRef.current) {
         // Rustle volume follows the gust intensity strongly
@@ -410,6 +478,15 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
 
           const targetInsect = insectBase * windSuppress * insectPulse;
           insectsGainRef.current.gain.setTargetAtTime(targetInsect, now, 0.5);
+      }
+
+      // Water Logic
+      if (waterGainRef.current) {
+          const waterBase = enabled ? (region.waterProbability || 0) * 0.06 : 0;
+          // Water volume fluctuates slightly
+          const flow = 1.0 + Math.sin(time * 0.3) * 0.2;
+
+          waterGainRef.current.gain.setTargetAtTime(waterBase * flow, now, 1.0);
       }
 
       animationFrameId = requestAnimationFrame(updateAudio);
@@ -477,16 +554,40 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
               panner.connect(reverbRef.current);
           }
 
-          // Bird Chirp Logic
-          const baseFreq = 2000 + Math.random() * 3000;
-          osc.frequency.setValueAtTime(baseFreq, t);
-          // Slight chirp (pitch drop or rise)
-          osc.frequency.exponentialRampToValueAtTime(baseFreq * (0.9 + Math.random() * 0.2), t + 0.1);
+          // FM Synthesis Bird Logic
+          // Carrier Frequency: Fundamental tone
+          const carrierFreq = 800 + Math.random() * 2000;
+          // Harmonic Ratio (random integer or half-integer often sounds best)
+          const ratio = 2 + Math.floor(Math.random() * 6) * 0.5;
+          const modFreq = carrierFreq * ratio;
+
+          // Modulator (the "texture")
+          const modOsc = ctx.createOscillator();
+          modOsc.type = 'sine';
+          modOsc.frequency.setValueAtTime(modFreq, t);
+
+          const modGain = ctx.createGain();
+          // Modulation Index (depth): dynamic
+          const modDepth = carrierFreq * (0.5 + Math.random());
+          modGain.gain.setValueAtTime(modDepth, t);
+          // Envelope modulation depth for "chirp" shape
+          modGain.gain.exponentialRampToValueAtTime(modDepth * 0.1, t + 0.2);
+
+          // Carrier
+          osc.frequency.setValueAtTime(carrierFreq, t);
+          // Frequency slide
+          osc.frequency.exponentialRampToValueAtTime(carrierFreq * (0.8 + Math.random() * 0.4), t + 0.2);
+
+          // Connect: Mod -> ModGain -> Carrier.frequency
+          modOsc.connect(modGain);
+          modGain.connect(osc.frequency);
 
           gain.gain.setValueAtTime(0, t);
           gain.gain.linearRampToValueAtTime(peakVol, t + 0.05);
           gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
 
+          modOsc.start(t);
+          modOsc.stop(t + 0.25);
           osc.start(t);
           osc.stop(t + 0.25);
         }
