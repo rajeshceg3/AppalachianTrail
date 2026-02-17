@@ -3,6 +3,7 @@ import { Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX, noise2D, createSeededRandom } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
+import { applyRockShader } from '../materials/RockShader';
 
 // Helper to hash string to integer
 const hashCode = (s) => {
@@ -61,7 +62,8 @@ const Rocks = ({ region }) => {
       ];
 
       // Embed deep
-      const yPos = y - (0.3 * scale[1]);
+      // Extra sink to avoid floating
+      const yPos = y - (0.3 * scale[1]) - (0.1 + rng() * 0.2);
 
       rocks.push({ position: [x, yPos, z], scale, rotation });
     }
@@ -107,52 +109,58 @@ const Rocks = ({ region }) => {
     };
   }, []);
 
+  const rockMaterial = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({
+        color: "#57534e",
+        roughness: 0.9,
+        roughnessMap: roughnessMap,
+        normalMap: normalMap,
+        normalScale: new THREE.Vector2(1, 1),
+        flatShading: false
+    });
+    applyRockShader(m, 0.25); // Apply vertex displacement
+    return m;
+  }, [roughnessMap, normalMap]);
+
   React.useEffect(() => {
     return () => {
       roughnessMap.dispose();
       normalMap.dispose();
+      rockMaterial.dispose();
     };
-  }, [roughnessMap, normalMap]);
+  }, [roughnessMap, normalMap, rockMaterial]);
 
   return (
     <>
         {/* Large Rocks */}
-        <Instances range={rockCount}>
-        <icosahedronGeometry args={[1, 0]} />
-        <meshStandardMaterial
-            color="#57534e"
-            roughness={0.9}
-            roughnessMap={roughnessMap}
-            normalMap={normalMap}
-            normalScale={new THREE.Vector2(1, 1)}
-            flatShading={false}
-        />
-        {rocks.map((d, i) => (
-            <Instance
-            key={`rock-${i}`}
-            position={d.position}
-            scale={d.scale}
-            rotation={d.rotation}
-            />
-        ))}
+        <Instances range={rockCount} material={rockMaterial}>
+          <icosahedronGeometry args={[1, 0]} />
+          {rocks.map((d, i) => (
+              <Instance
+              key={`rock-${i}`}
+              position={d.position}
+              scale={d.scale}
+              rotation={d.rotation}
+              />
+          ))}
         </Instances>
 
         {/* Pebbles */}
         <Instances range={pebbleCount}>
-        <icosahedronGeometry args={[1, 0]} />
-        <meshStandardMaterial
-            color="#6b655f"
-            roughness={1.0}
-            flatShading={true}
-        />
-        {pebbles.map((d, i) => (
-            <Instance
-            key={`peb-${i}`}
-            position={d.position}
-            scale={d.scale}
-            rotation={d.rotation}
-            />
-        ))}
+          <icosahedronGeometry args={[1, 0]} />
+          <meshStandardMaterial
+              color="#6b655f"
+              roughness={1.0}
+              flatShading={true}
+          />
+          {pebbles.map((d, i) => (
+              <Instance
+              key={`peb-${i}`}
+              position={d.position}
+              scale={d.scale}
+              rotation={d.rotation}
+              />
+          ))}
         </Instances>
     </>
   );

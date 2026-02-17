@@ -34,7 +34,7 @@ function fbm4D(nx, ny, nz, nw, octaves = 4, persistence = 0.5, lacunarity = 2.0)
  * @param {number} octaves - Number of FBM octaves.
  * @returns {THREE.CanvasTexture} The generated texture.
  */
-export function generateHeightMap(width = 512, height = 512, scale = 2.0, octaves = 4) {
+export function generateHeightMap(width = 512, height = 512, scale = 8.0, octaves = 6) { // Increased scale and octaves for finer grain
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -91,7 +91,7 @@ export function generateHeightMap(width = 512, height = 512, scale = 2.0, octave
  * @param {number} strength - Strength of the normal effect (bumpiness).
  * @returns {THREE.CanvasTexture} The generated normal map.
  */
-export function generateNormalMap(width = 512, height = 512, scale = 2.0, octaves = 4, strength = 2.0) {
+export function generateNormalMap(width = 512, height = 512, scale = 8.0, octaves = 6, strength = 2.0) { // Increased scale and octaves
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -173,7 +173,7 @@ export function generateNormalMap(width = 512, height = 512, scale = 2.0, octave
 }
 
 /**
- * Generates an alpha map for the path (opaque center, transparent edges).
+ * Generates an alpha map for the path with ragged, organic edges using noise.
  *
  * @param {number} width - Texture width.
  * @param {number} height - Texture height.
@@ -185,25 +185,67 @@ export function generateAlphaMap(width = 512, height = 512) {
   canvas.height = height;
   const ctx = canvas.getContext('2d');
 
-  // Linear gradient from left (0) to right (1)
-  // Assuming U=0 is left edge, U=1 is right edge of path ribbon.
-  // We want opacity 0 at U=0, opacity 1 at U=0.5, opacity 0 at U=1.
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
 
-  const gradient = ctx.createLinearGradient(0, 0, width, 0);
-  gradient.addColorStop(0, 'black');
-  gradient.addColorStop(0.2, 'white'); // Fast fade in
-  gradient.addColorStop(0.8, 'white'); // Maintain opaque center
-  gradient.addColorStop(1, 'black');
+  // Use a noise scale that creates nice ragged edges
+  // We want the noise to repeat vertically for the path
+  const noiseScaleY = 5.0; // Scale along path
+  const noiseScaleX = 2.0; // Scale across width
 
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  const twoPi = Math.PI * 2;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Normalized coordinates
+      const u = x / width;
+      const v = y / height;
+
+      // Calculate distance from center (0.0 at center, 0.5 at edges)
+      const dist = Math.abs(u - 0.5);
+
+      // Generate noise
+      // We map 'v' to 4D torus for seamless vertical wrapping
+      // We map 'u' linearly (or maybe standard noise)
+
+      const angle = v * twoPi;
+      const ny = Math.cos(angle) * noiseScaleY;
+      const nw = Math.sin(angle) * noiseScaleY;
+      const nx = u * noiseScaleX;
+
+      // 3D noise (x, y, w) using 4D function
+      const n = fbm4D(nx, ny, 0, nw, 3, 0.5, 2.0); // range approx -1 to 1
+
+      // Distort the threshold
+      // Base threshold is 0.3 (leaving 0.2 margin on each side)
+      // Add noise to threshold
+      const threshold = 0.35 + n * 0.1;
+
+      // Soft blend
+      // Calculate alpha based on distance vs threshold
+      // 1.0 if dist < threshold, fading to 0.0
+
+      const edgeWidth = 0.1; // Width of the fade
+      let alpha = 1.0 - THREE.MathUtils.smoothstep(threshold - edgeWidth, threshold + edgeWidth, dist);
+
+      const val = Math.floor(alpha * 255);
+
+      const index = (y * width + x) * 4;
+      data[index] = val;     // R
+      data[index + 1] = val; // G
+      data[index + 2] = val; // B
+      data[index + 3] = val; // Alpha (use val for everything for safety, though only Alpha matters or R in alphaMap)
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
 
   const texture = new THREE.CanvasTexture(canvas);
-  // Path is not wrapped horizontally usually, but ribbon might be?
-  // Path ribbon U goes from 0 to 1 across width.
-  // V goes along the path.
   texture.wrapS = THREE.ClampToEdgeWrapping; // Don't wrap width
   texture.wrapT = THREE.RepeatWrapping;      // Wrap length
+
+  // Ensure it repeats along the path
+  texture.repeat.set(1, 50); // Repeat 50 times along path for consistent detail
 
   return texture;
 }
