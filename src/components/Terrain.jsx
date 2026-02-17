@@ -5,6 +5,47 @@ import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator'
 
 const terrainArgs = [600, 600, 512, 512];
 
+const onBeforeCompile = (shader) => {
+    shader.fragmentShader = `
+      // Simple hash for high freq noise
+      float hash(vec2 p) {
+          p = fract(p * vec2(123.34, 456.21));
+          p += dot(p, p + 45.32);
+          return fract(p.x * p.y);
+      }
+    ` + shader.fragmentShader;
+
+    // Use uv instead of vMapUv if map is not present?
+    // But roughnessMap/normalMap are present, so vMapUv (or vRoughnessMapUv) should be there.
+    // Standard material usually defines vMapUv if map is used.
+    // If not, use vUv (standard attribute).
+    // Let's assume vUv exists in standard vertex shader output.
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <map_fragment>',
+        `
+        #include <map_fragment>
+
+        // Add procedural "grit"
+        // High frequency noise based on UV
+        // Use vRoughnessMapUv if available (since we use roughnessMap) or vUv
+
+        #ifdef USE_ROUGHNESSMAP
+            vec2 gritUv = vRoughnessMapUv;
+        #else
+            vec2 gritUv = vUv;
+        #endif
+
+        float grit = hash(gritUv * 500.0);
+
+        // Soften the grit
+        grit = mix(0.9, 1.1, grit);
+
+        diffuseColor.rgb *= grit;
+        `
+    );
+};
+
 const Terrain = ({ color }) => {
   const meshRef = useRef();
 
@@ -41,13 +82,10 @@ const Terrain = ({ color }) => {
     const count = positions.count;
 
     // 1. Set Heights
-    // PlaneGeometry creates a flat grid on XY. We displace Z (which becomes Y in world).
-
     for (let i = 0; i < count; i++) {
       const x = positions.getX(i);
-      const y = positions.getY(i); // Corresponds to -Z in world space due to rotation
+      const y = positions.getY(i);
 
-      // Calculate height at World (x, z). World Z = -y.
       const height = getTerrainHeight(x, -y);
       positions.setZ(i, height);
     }
@@ -59,7 +97,6 @@ const Terrain = ({ color }) => {
     const normals = geometry.attributes.normal;
 
     // 3. Calculate Vertex Colors
-    // Initialize color attribute if not present
     if (!geometry.attributes.color) {
       const colors = new Float32Array(count * 3);
       geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
@@ -68,38 +105,25 @@ const Terrain = ({ color }) => {
     const colors = colorAttribute.array;
 
     const c = new THREE.Color();
-    const darkRock = new THREE.Color('#2a2a2a'); // Dark grey/brown for cliffs
-    const highPeak = new THREE.Color('#e2e8f0'); // Lighter/snowy for peaks (Slate-200)
+    const darkRock = new THREE.Color('#2a2a2a');
+    const highPeak = new THREE.Color('#e2e8f0');
 
     for (let i = 0; i < count; i++) {
       const x = positions.getX(i);
-      const y = positions.getY(i); // local Y (world -Z)
-      const h = positions.getZ(i); // local Z (world Y/Height)
+      const y = positions.getY(i);
+      const h = positions.getZ(i);
 
-      // Slope factor: 1.0 = flat (normal points up Z), 0.0 = vertical
       const slope = normals.getZ(i);
+      const n = noise2D(x * 0.05, -y * 0.05);
 
-      // Noise for organic variation
-      const n = noise2D(x * 0.05, -y * 0.05); // Organic patchiness
-
-      // Reset to base color
       c.copy(baseColor);
 
-      // --- Slope Texturing ---
-      // If slope < 0.7 (approx 45 deg), blend to rock color
-      // Smoothstep for soft transition
       const rockFactor = 1.0 - THREE.MathUtils.smoothstep(0.5, 0.85, slope);
-      // Mix rock color based on factor
       c.lerp(darkRock, rockFactor * 0.7);
 
-      // --- Height Texturing ---
-      // Lighten peaks
       const peakFactor = THREE.MathUtils.smoothstep(35, 60, h);
       c.lerp(highPeak, peakFactor * 0.4);
 
-      // --- Noise Texturing ---
-      // Subtle darkening/lightening for "dirt" vs "grass"
-      // range -0.05 to +0.05
       c.offsetHSL(0, 0, n * 0.04);
 
       colors[i * 3] = c.r;
@@ -109,14 +133,14 @@ const Terrain = ({ color }) => {
 
     colorAttribute.needsUpdate = true;
 
-  }, [baseColor]); // Re-run when region color changes
+  }, [baseColor]);
 
   return (
     <mesh
       ref={meshRef}
       rotation={[-Math.PI / 2, 0, 0]}
       receiveShadow
-      frustumCulled={false} // Prevent culling due to displacement
+      frustumCulled={false}
     >
       <planeGeometry args={terrainArgs} />
       <meshStandardMaterial
@@ -124,8 +148,9 @@ const Terrain = ({ color }) => {
         roughness={0.9}
         roughnessMap={roughnessMap}
         normalMap={normalMap}
-        normalScale={new THREE.Vector2(0.5, 0.5)} // Subtle normal
+        normalScale={new THREE.Vector2(0.5, 0.5)}
         flatShading={false}
+        onBeforeCompile={onBeforeCompile}
       />
     </mesh>
   );

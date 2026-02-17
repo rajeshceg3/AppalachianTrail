@@ -11,22 +11,25 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
     shader.uniforms.uTime = { value: 0 };
     shader.uniforms.uSwaySpeed = { value: swaySpeed };
     shader.uniforms.uSwayAmount = { value: swayAmount };
+    shader.uniforms.uGlobalWind = { value: 0.5 };
+    shader.uniforms.uWindDirection = { value: new THREE.Vector2(1, 0) };
 
     // Inject uniforms
     shader.vertexShader = `
       uniform float uTime;
       uniform float uSwaySpeed;
       uniform float uSwayAmount;
+      uniform float uGlobalWind;
+      uniform vec2 uWindDirection;
     ` + shader.vertexShader;
 
     // Inject displacement logic
-    // We compute world position to create coherent wind waves across instances.
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `
         #include <begin_vertex>
 
-        // Calculate world position for coherent noise
+        // Calculate world position
         vec4 worldPos = modelMatrix * vec4(position, 1.0);
         #ifdef USE_INSTANCING
           worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
@@ -36,31 +39,36 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
         // Assumes local Y is up and base is approx -1.0 for foliage
         float h = max(0.0, position.y + 1.0);
 
+        // --- Unified Wind Logic ---
+
+        // Intensity from global system (synced with audio)
+        // uGlobalWind contains base + gusts
+        float intensity = uGlobalWind * uSwayAmount;
+
+        // 1. Directional Bend (Lean)
+        // Trees lean away from wind source
+        float bendFactor = intensity * 0.5 * h * h;
+        float bendX = uWindDirection.x * bendFactor;
+        float bendZ = uWindDirection.y * bendFactor;
+
+        // 2. Turbulance / Flutter
+        // Faster time for flutter
         float time = uTime * uSwaySpeed;
 
-        // --- Gust Logic ---
-        // Combine sine waves to create rolling wind bands across the terrain.
-        // Frequencies chosen to be non-repeating.
-        float gust = sin(worldPos.x * 0.05 + time * 0.5)
-                   + sin(worldPos.z * 0.03 + time * 0.3)
-                   + sin(worldPos.x * 0.1 + worldPos.z * 0.1 + time * 0.8) * 0.5;
+        // Add some local variance so trees don't move in unison
+        float localPhase = worldPos.x * 0.5 + worldPos.z * 0.5;
 
-        // Map gust (-2.5 to 2.5) to a multiplier (0.5 to 1.5)
-        float gustFactor = 1.0 + (gust * 0.2);
+        // Flutter is faster and chaotic
+        float flutter = sin(time * 2.0 + localPhase) * 0.1 * intensity * h;
 
-        // Modulate amplitude by gust
-        float currentSwayAmount = uSwayAmount * gustFactor;
+        // Elastic bounce (sway back against wind)
+        float bounce = cos(time * 0.5 + localPhase) * 0.2 * intensity * h * h;
 
-        // --- Sway Logic ---
-        // High frequency sway based on position
-        float swayX = sin(time + worldPos.x * 0.5 + worldPos.z * 0.3) * currentSwayAmount * h * h;
-        float swayZ = cos(time * 0.8 + worldPos.x * 0.3 + worldPos.z * 0.5) * currentSwayAmount * h * h;
-
-        transformed.x += swayX;
-        transformed.z += swayZ;
+        transformed.x += bendX + flutter + bounce * uWindDirection.x;
+        transformed.z += bendZ + flutter + bounce * uWindDirection.y;
 
         // Arc Correction: Lower Y slightly to simulate rotation around base
-        transformed.y -= (swayX * swayX + swayZ * swayZ) * 0.3;
+        transformed.y -= (bendX * bendX + bendZ * bendZ) * 0.2;
       `
     );
 
@@ -68,10 +76,14 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
     material.userData.shader = shader;
   };
 
-  // Helper to update time
-  material.userData.update = (time) => {
+  // Helper to update time and wind
+  material.userData.update = (time, natureState) => {
     if (material.userData.shader) {
       material.userData.shader.uniforms.uTime.value = time;
+      if (natureState) {
+          material.userData.shader.uniforms.uGlobalWind.value = natureState.windIntensity;
+          material.userData.shader.uniforms.uWindDirection.value.copy(natureState.windDirection);
+      }
     }
   };
 }
