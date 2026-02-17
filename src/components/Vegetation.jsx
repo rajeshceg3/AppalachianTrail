@@ -13,11 +13,12 @@ const hashCode = (s) => {
   return h;
 }
 
-const TreeCluster = ({ data, region, swaySpeed }) => {
-  // Reactive sway based on wind intensity
+const TreeCluster = ({ data, region, swaySpeed, natureRef }) => {
+  // Reactive sway based on wind intensity (initial setup)
+  // Shader uses uniforms for dynamic updates
   const windIntensity = region.windIntensity || 0.4;
   const speed = swaySpeed * (0.8 + windIntensity);
-  const amp = 0.2 * (0.5 + windIntensity * 2.0); // Magnitude for shader
+  const amp = 0.2 * (0.5 + windIntensity * 2.0); // Base magnitude for shader
 
   // Create materials with wind shader
   const foliageMaterial1 = useMemo(() => {
@@ -40,10 +41,11 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
 
   useFrame((state) => {
     const time = state.clock.elapsedTime;
+    const nature = natureRef?.current;
 
-    if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time);
-    if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time);
-    if (foliageMaterial3.userData.update) foliageMaterial3.userData.update(time);
+    if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time, nature);
+    if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time, nature);
+    if (foliageMaterial3.userData.update) foliageMaterial3.userData.update(time, nature);
   });
 
   return (
@@ -123,7 +125,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
   );
 };
 
-const BroadleafCluster = ({ data, region, swaySpeed }) => {
+const BroadleafCluster = ({ data, region, swaySpeed, natureRef }) => {
   const windIntensity = region.windIntensity || 0.4;
   const speed = swaySpeed * (0.8 + windIntensity);
   const amp = 0.15 * (0.5 + windIntensity * 2.0);
@@ -142,8 +144,10 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 
   useFrame((state) => {
     const time = state.clock.elapsedTime;
-    if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time);
-    if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time);
+    const nature = natureRef?.current;
+
+    if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time, nature);
+    if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time, nature);
   });
 
   return (
@@ -205,7 +209,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
   );
 };
 
-const Vegetation = ({ region }) => {
+const Vegetation = ({ region, natureRef }) => {
   const treeCount = region.environment === 'forest' ? 2500 : 1000;
 
   const { conifer, broadleaf } = useMemo(() => {
@@ -295,13 +299,13 @@ const Vegetation = ({ region }) => {
 
   return (
     <>
-      <TreeCluster data={coniferClusters[0]} region={region} swaySpeed={0.5} />
-      <TreeCluster data={coniferClusters[1]} region={region} swaySpeed={0.4} />
-      <TreeCluster data={coniferClusters[2]} region={region} swaySpeed={0.6} />
-      <TreeCluster data={coniferClusters[3]} region={region} swaySpeed={0.45} />
+      <TreeCluster data={coniferClusters[0]} region={region} swaySpeed={0.5} natureRef={natureRef} />
+      <TreeCluster data={coniferClusters[1]} region={region} swaySpeed={0.4} natureRef={natureRef} />
+      <TreeCluster data={coniferClusters[2]} region={region} swaySpeed={0.6} natureRef={natureRef} />
+      <TreeCluster data={coniferClusters[3]} region={region} swaySpeed={0.45} natureRef={natureRef} />
 
-      <BroadleafCluster data={broadleafClusters[0]} region={region} swaySpeed={0.55} />
-      <BroadleafCluster data={broadleafClusters[1]} region={region} swaySpeed={0.35} />
+      <BroadleafCluster data={broadleafClusters[0]} region={region} swaySpeed={0.55} natureRef={natureRef} />
+      <BroadleafCluster data={broadleafClusters[1]} region={region} swaySpeed={0.35} natureRef={natureRef} />
     </>
   );
 };
