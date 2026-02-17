@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { getTerrainHeight, noise2D } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
 
-const terrainArgs = [600, 600, 512, 512];
+const terrainArgs = [1200, 1200, 1024, 1024];
 
 const Terrain = ({ color }) => {
   const meshRef = useRef();

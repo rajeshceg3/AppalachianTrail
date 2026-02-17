@@ -206,7 +206,8 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 };
 
 const Vegetation = ({ region }) => {
-  const treeCount = region.environment === 'forest' ? 2500 : 1000;
+  // Increased tree count for larger terrain (1200x1200)
+  const treeCount = region.environment === 'forest' ? 8000 : 3000;
 
   const { conifer, broadleaf } = useMemo(() => {
     const conifer = [];
@@ -223,8 +224,8 @@ const Vegetation = ({ region }) => {
     while ((conifer.length + broadleaf.length) < treeCount && attempts < maxAttempts) {
       attempts++;
 
-      const z = (rng() - 0.5) * 600;
-      const x = (rng() - 0.5) * 600;
+      const z = (rng() - 0.5) * 1200;
+      const x = (rng() - 0.5) * 1200;
 
       const noiseVal = noise2D(x * 0.03, z * 0.03);
       if (noiseVal < -0.2) continue;

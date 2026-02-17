@@ -218,6 +218,30 @@ const Controls = ({ audioRef }) => {
     // Lower factor = more inertia (slower start/stop)
     velocity.current.lerp(targetVelocity, delta * 3.0);
 
+    // --- Soft Boundaries Logic ---
+    // Prevent walking too far from path
+    const currentPos = camera.position.clone();
+    const pathX = getPathX(currentPos.z);
+    const distToPath = currentPos.x - pathX;
+    const MAX_DIST = 30.0; // Stay within 30 units of path
+
+    // Push back force if too far
+    if (Math.abs(distToPath) > MAX_DIST) {
+        const pushDir = distToPath > 0 ? -1 : 1;
+        // Strong push back if trying to go further
+        // Or just modify velocity x component to resist outward movement
+        const resistance = (Math.abs(distToPath) - MAX_DIST) * 10.0;
+        velocity.current.x += pushDir * resistance * delta;
+    }
+
+    // Prevent walking off the ends of the world
+    const MAX_Z = 550.0;
+    if (Math.abs(currentPos.z) > MAX_Z) {
+         const pushDir = currentPos.z > 0 ? -1 : 1;
+         const resistance = (Math.abs(currentPos.z) - MAX_Z) * 10.0;
+         velocity.current.z += pushDir * resistance * delta;
+    }
+
     // Apply movement if there is significant velocity
     if (velocity.current.lengthSq() > 0.001) {
         camera.position.addScaledVector(velocity.current, delta);
@@ -281,7 +305,6 @@ const Controls = ({ audioRef }) => {
 
     // Initial Snap or Smooth Lerp
     if (!isInitialized.current) {
-        console.log("Controls Init: GroundHeight", groundHeight, "TargetY", targetY, "CamPos", camera.position);
         camera.position.y = targetY;
         isInitialized.current = true;
     } else {

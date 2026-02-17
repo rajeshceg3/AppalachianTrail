@@ -16,7 +16,8 @@ const hashCode = (s) => {
 const Rocks = ({ region }) => {
   // More rocks in rocky regions (Maine, New England)
   const isRocky = region.id === 'maine' || region.id === 'new-england';
-  const rockCount = isRocky ? 1000 : 300;
+  // Increased counts for larger terrain
+  const rockCount = isRocky ? 4000 : 1200;
   const pebbleCount = rockCount * 3; // More pebbles
 
   const { rocks, pebbles } = useMemo(() => {
@@ -33,8 +34,8 @@ const Rocks = ({ region }) => {
     while (rocks.length < rockCount && attempts < maxAttempts) {
       attempts++;
 
-      const z = (rng() - 0.5) * 600;
-      const x = (rng() - 0.5) * 600;
+      const z = (rng() - 0.5) * 1200;
+      const x = (rng() - 0.5) * 1200;
 
       // Noise clustering
       const noiseVal = noise2D(x * 0.1, z * 0.1);
@@ -72,8 +73,8 @@ const Rocks = ({ region }) => {
     attempts = 0;
     while (pebbles.length < pebbleCount && attempts < maxAttempts) {
         attempts++;
-        const z = (rng() - 0.5) * 600;
-        const x = (rng() - 0.5) * 600;
+        const z = (rng() - 0.5) * 1200;
+        const x = (rng() - 0.5) * 1200;
 
         // Less strict clustering
         const noiseVal = noise2D(x * 0.15, z * 0.15);
