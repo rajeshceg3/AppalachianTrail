@@ -189,7 +189,8 @@ const Scene = ({ region, audioEnabled }) => {
       const heightFactor = Math.max(0.4, 1.0 - (Math.max(0, camY - 5) * 0.025));
 
       // Clouds shadow effect on fog (density varies slowly)
-      const cloudNoise = Math.sin(time * 0.1) * 0.1 + Math.sin(time * 0.05 + 10) * 0.1;
+      // Added a subtle high-frequency component (0.5) to match wind gust rhythm
+      const cloudNoise = Math.sin(time * 0.1) * 0.1 + Math.sin(time * 0.05 + 10) * 0.1 + Math.sin(time * 0.5) * 0.02;
       density *= (1.0 + cloudNoise);
 
       fogRef.current.density = density * heightFactor;

@@ -36,14 +36,16 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
         // Assumes local Y is up and base is approx -1.0 for foliage
         float h = max(0.0, position.y + 1.0);
 
-        float time = uTime * uSwaySpeed;
+        // Separate time for global wind movement vs local sway frequency
+        float windTime = uTime;
+        float swayTime = uTime * uSwaySpeed;
 
         // --- Gust Logic ---
         // Combine sine waves to create rolling wind bands across the terrain.
-        // Frequencies chosen to be non-repeating.
-        float gust = sin(worldPos.x * 0.05 + time * 0.5)
-                   + sin(worldPos.z * 0.03 + time * 0.3)
-                   + sin(worldPos.x * 0.1 + worldPos.z * 0.1 + time * 0.8) * 0.5;
+        // Frequencies chosen to be non-repeating. Matches src/utils/wind.js
+        float gust = sin(worldPos.x * 0.05 + windTime * 0.5)
+                   + sin(worldPos.z * 0.03 + windTime * 0.3)
+                   + sin(worldPos.x * 0.1 + worldPos.z * 0.1 + windTime * 0.8) * 0.5;
 
         // Map gust (-2.5 to 2.5) to a multiplier (0.5 to 1.5)
         float gustFactor = 1.0 + (gust * 0.2);
@@ -53,8 +55,8 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
 
         // --- Sway Logic ---
         // High frequency sway based on position
-        float swayX = sin(time + worldPos.x * 0.5 + worldPos.z * 0.3) * currentSwayAmount * h * h;
-        float swayZ = cos(time * 0.8 + worldPos.x * 0.3 + worldPos.z * 0.5) * currentSwayAmount * h * h;
+        float swayX = sin(swayTime + worldPos.x * 0.5 + worldPos.z * 0.3) * currentSwayAmount * h * h;
+        float swayZ = cos(swayTime * 0.8 + worldPos.x * 0.3 + worldPos.z * 0.5) * currentSwayAmount * h * h;
 
         transformed.x += swayX;
         transformed.z += swayZ;

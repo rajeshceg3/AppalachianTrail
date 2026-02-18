@@ -18,9 +18,8 @@ const Controls = ({ audioRef }) => {
   const isInitialized = useRef(false);
 
   // Footstep tracking
-  const lastStepPosition = useRef(new THREE.Vector3());
-  const STEP_DISTANCE = 1.5;
-  const WALK_SPEED = 2.5;
+  const lastBobPhase = useRef(0);
+  const WALK_SPEED = 1.4; // Relaxing pace
 
   // Head bobbing state
   const bobRef = useRef(0);
@@ -33,9 +32,6 @@ const Controls = ({ audioRef }) => {
   const wobbleRef = useRef(0);
 
   useEffect(() => {
-    // Initialize last step position
-    lastStepPosition.current.copy(camera.position);
-
     // Initialize rotation state from current camera
     currentEuler.current.setFromQuaternion(camera.quaternion);
     // Start with a slight downward tilt to see the path immediately
@@ -171,8 +167,8 @@ const Controls = ({ audioRef }) => {
   useFrame((state, delta) => {
     // --- Smooth Look Rotation ---
     // Interpolate current rotation towards target rotation
-    // Use a damping factor for "weight"
-    const lookDamping = 10.0;
+    // Lower damping for heavier, smoother feel
+    const lookDamping = 5.0;
     currentEuler.current.x = THREE.MathUtils.lerp(currentEuler.current.x, targetEuler.current.x, delta * lookDamping);
     currentEuler.current.y = THREE.MathUtils.lerp(currentEuler.current.y, targetEuler.current.y, delta * lookDamping);
 
@@ -216,7 +212,7 @@ const Controls = ({ audioRef }) => {
 
     // Apply Inertia: Smoothly interpolate current velocity towards target velocity
     // Lower factor = more inertia (slower start/stop)
-    velocity.current.lerp(targetVelocity, delta * 3.0);
+    velocity.current.lerp(targetVelocity, delta * 1.5);
 
     // --- Soft Boundaries Logic ---
     // Prevent walking too far from path
@@ -256,28 +252,31 @@ const Controls = ({ audioRef }) => {
         const speed = velocity.current.length();
         bobRef.current += delta * speed * 4.0;
 
-        // Check footsteps
-        const dist = camera.position.distanceTo(lastStepPosition.current);
-        if (dist > STEP_DISTANCE) {
+        // Phase-Synced Footsteps
+        // Trigger footstep when head bob reaches trough (sin = -1)
+        // This corresponds to phase 3*PI/2 (4.71) in a cycle 0..2PI
+        const currentPhase = bobRef.current % (Math.PI * 2);
+        const threshold = 4.71;
+
+        // Trigger if we just crossed the threshold
+        if (lastBobPhase.current < threshold && currentPhase >= threshold) {
             if (audioRef && audioRef.current) {
-                // Determine surface type based on distance from path center
                 const cx = camera.position.x;
                 const cz = camera.position.z;
                 const pathX = getPathX(cz);
                 const distToPath = Math.abs(cx - pathX);
-
-                // Path visual width is roughly ~5 units.
-                // Threshold of 3.5 gives a bit of leeway for the gravel fade-out.
                 const surface = distToPath < 3.5 ? 'gravel' : 'grass';
 
                 audioRef.current.playFootstep(surface);
                 audioRef.current.playGearRustle();
             }
-            lastStepPosition.current.copy(camera.position);
         }
+
+        lastBobPhase.current = currentPhase;
     } else {
         // Reset bob slowly when stopped
         bobRef.current = THREE.MathUtils.lerp(bobRef.current, Math.round(bobRef.current / Math.PI) * Math.PI, delta * 5);
+        lastBobPhase.current = bobRef.current % (Math.PI * 2);
     }
 
     // Breathing Sway (always active)
