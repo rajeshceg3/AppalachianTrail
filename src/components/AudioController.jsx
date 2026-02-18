@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import { useThree } from '@react-three/fiber';
+import { getWindGustFactor } from '../utils/wind';
 
 const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const audioContextRef = useRef(null);
@@ -420,11 +421,9 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       }
 
       // --- Wind Gust Logic (Synced with Visuals) ---
-      // Use similar polyrhythm to visual shader: sin(t*0.5) + sin(t*0.3)
-      // Visual shader uses swaySpeed, but base 1.0 is default.
-      const gust = Math.sin(time * 0.5) + Math.sin(time * 0.3) * 0.7;
-      // gust ranges roughly -1.7 to 1.7. Map to 0.5 to 1.5
-      const gustFactor = 0.8 + (gust * 0.2);
+      // Uses the same math as the vertex shader for coherent immersion.
+      // If the user sees a gust hit the trees around them, they hear it too.
+      const gustFactor = getWindGustFactor(camera.position.x, camera.position.z, time);
 
       // Stereo Wind Updates
       // Left/Right fluctuation
