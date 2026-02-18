@@ -228,16 +228,23 @@ const Vegetation = ({ region }) => {
       const x = (rng() - 0.5) * 1200;
 
       const noiseVal = noise2D(x * 0.03, z * 0.03);
-      if (noiseVal < -0.2) continue;
+
+      // Soft probability ramp instead of hard threshold
+      // Transition from 0 to 1 between noise -0.4 and 0.1
+      const noiseProb = THREE.MathUtils.smoothstep(-0.4, 0.1, noiseVal);
 
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
-      const placementProb = Math.max(0, Math.min(1, (dist - 4) / 10));
+
+      // Soft clearing around path (4.0 to 8.0 units)
+      const pathProb = THREE.MathUtils.smoothstep(4.0, 8.0, dist);
+
+      const placementProb = noiseProb * pathProb;
 
       if (rng() > placementProb) continue;
 
       // Sink deeper to hide intersection
-      const y = getTerrainHeight(x, z) - (0.1 + rng() * 0.3);
+      const y = getTerrainHeight(x, z) - (0.1 + rng() * 0.25);
       const scale = 0.5 * Math.exp(rng() * 1.3);
       const rotation = rng() * Math.PI * 2;
       const tiltX = (rng() - 0.5) * 0.2;

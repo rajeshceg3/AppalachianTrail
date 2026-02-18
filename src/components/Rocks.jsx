@@ -39,12 +39,19 @@ const Rocks = ({ region }) => {
 
       // Noise clustering
       const noiseVal = noise2D(x * 0.1, z * 0.1);
-      if (noiseVal < -0.1) continue;
+
+      // Soft probability ramp (transition -0.3 to 0.2)
+      const noiseProb = THREE.MathUtils.smoothstep(-0.3, 0.2, noiseVal);
 
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
-      const prob = Math.max(0, Math.min(1, (dist - 3) / 6));
-      if (rng() > prob) continue;
+
+      // Soft clearing around path (2.5 to 5.0 units)
+      const pathProb = THREE.MathUtils.smoothstep(2.5, 5.0, dist);
+
+      const finalProb = noiseProb * pathProb;
+
+      if (rng() > finalProb) continue;
 
       const y = getTerrainHeight(x, z);
 
@@ -63,8 +70,8 @@ const Rocks = ({ region }) => {
       ];
 
       // Embed deep
-      // Extra sink to avoid floating
-      const yPos = y - (0.3 * scale[1]) - (0.1 + rng() * 0.2);
+      // Extra sink to avoid floating, randomized
+      const yPos = y - (0.2 * scale[1]) - (0.05 + rng() * 0.1);
 
       rocks.push({ position: [x, yPos, z], scale, rotation });
     }
@@ -78,13 +85,19 @@ const Rocks = ({ region }) => {
 
         // Less strict clustering
         const noiseVal = noise2D(x * 0.15, z * 0.15);
-        if (noiseVal < -0.3) continue;
+
+        // Soft probability ramp (-0.4 to 0.0)
+        const noiseProb = THREE.MathUtils.smoothstep(-0.4, 0.0, noiseVal);
 
         const pathX = getPathX(z);
         const dist = Math.abs(x - pathX);
-        // Pebbles can be closer to path
-        const prob = Math.max(0, Math.min(1, (dist - 1.5) / 3));
-        if (rng() > prob) continue;
+
+        // Soft clearing around path (1.5 to 3.5 units) - pebbles can be closer
+        const pathProb = THREE.MathUtils.smoothstep(1.5, 3.5, dist);
+
+        const finalProb = noiseProb * pathProb;
+
+        if (rng() > finalProb) continue;
 
         const y = getTerrainHeight(x, z);
         const baseScale = 0.05 + rng() * 0.15; // Small
