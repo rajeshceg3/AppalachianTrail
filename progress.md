@@ -56,6 +56,11 @@
   - **Atmospheric Depth**: Added dynamic cloud shadows modulating light intensity and fog density in `Scene.jsx`.
   - **Post-Processing**: Integrated Depth of Field with autofocus raycasting, Bloom, Vignette, and Film Grain.
   - **Verification**: `verify_visuals_new.py` confirmed organic rendering without artificial artifacts.
+- **Immersion Update (Final Polish)**:
+  - **Scale**: Expanded terrain to 1200x1200 and increased vegetation/rock density (8000/4000) for a lush, dense environment.
+  - **Boundaries**: Implemented soft velocity damping and increased resistance to prevent world-edge visibility.
+  - **Atmosphere**: Increased fog density to mask horizon seamlessly.
+  - **Verification**: Validated visual density and naturalism with Playwright automation.
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).
@@ -75,6 +80,7 @@
 - [x] Advanced Immersion (Shaders, Dynamic Lighting, Spatial Audio).
 - [x] UX Redesign (Vertical Journey Map, Dynamic Particles).
 - [x] Ultrathink Organic Polish (Physics Camera, FBM Textures, Rock Shaders).
+- [x] Final Density & Scale Expansion.
 
 ## Next Steps
 - Final deployment configuration (external).
