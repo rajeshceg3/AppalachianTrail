@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
-import { getTerrainHeight, noise2D } from '../utils/terrain';
+import { getTerrainHeight, getPathX, noise2D } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
 
 const terrainArgs = [1200, 1200, 1024, 1024];
@@ -70,6 +70,7 @@ const Terrain = ({ color }) => {
     const c = new THREE.Color();
     const darkRock = new THREE.Color('#2a2a2a'); // Dark grey/brown for cliffs
     const highPeak = new THREE.Color('#e2e8f0'); // Lighter/snowy for peaks (Slate-200)
+    const dirtColor = new THREE.Color('#5d5040'); // Dirt/gravel for path edges
 
     for (let i = 0; i < count; i++) {
       const x = positions.getX(i);
@@ -85,12 +86,24 @@ const Terrain = ({ color }) => {
       // Reset to base color
       c.copy(baseColor);
 
+      // --- Path Blending ---
+      const pathX = getPathX(-y); // -y is World Z
+      const distToPath = Math.abs(x - pathX);
+      // Fade dirt color near path (1.5 to 4.0 units)
+      const pathBlend = 1.0 - THREE.MathUtils.smoothstep(1.5, 4.0, distToPath);
+      c.lerp(dirtColor, pathBlend * 0.8);
+
       // --- Slope Texturing ---
-      // If slope < 0.7 (approx 45 deg), blend to rock color
-      // Smoothstep for soft transition
-      const rockFactor = 1.0 - THREE.MathUtils.smoothstep(0.5, 0.85, slope);
-      // Mix rock color based on factor
-      c.lerp(darkRock, rockFactor * 0.7);
+      // Perturb slope threshold with noise for organic rock blending
+      const thresholdNoise = n * 0.15;
+      const rockThresholdStart = 0.5 + thresholdNoise;
+      const rockThresholdEnd = 0.85 + thresholdNoise;
+
+      // If slope is steep, blend to rock color
+      const rockFactor = 1.0 - THREE.MathUtils.smoothstep(rockThresholdStart, rockThresholdEnd, slope);
+
+      // Mix rock color based on factor (overrides dirt/grass)
+      c.lerp(darkRock, rockFactor * 0.8);
 
       // --- Height Texturing ---
       // Lighten peaks
