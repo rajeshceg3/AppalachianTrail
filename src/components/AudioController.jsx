@@ -18,6 +18,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
   const waterGainRef = useRef(null);
   const windBassRef = useRef(null); // { gain }
 
+  // Breathing Refs
+  const breathLfoRef = useRef(null); // Oscillator
+  const breathGainRef = useRef(null); // Main volume
+  const breathFilterRef = useRef(null); // Tone
+
   // Buffers
   const gravelBufferRef = useRef(null);
 
@@ -30,6 +35,28 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     },
     playGearRustle: () => {
       if (enabled) triggerGearRustle();
+    },
+    setExertion: (level) => {
+        // level 0..1
+        if (!breathLfoRef.current || !enabled || !audioContextRef.current) return;
+        const now = audioContextRef.current.currentTime;
+
+        // Map exertion to breathing rate (Hz)
+        // Rest: 0.2 Hz (5s cycle)
+        // Max: 0.6 Hz (1.6s cycle)
+        const targetRate = 0.2 + (level * 0.4);
+
+        // Map exertion to volume
+        // Rest: Very quiet (0.005)
+        // Max: Audible (0.04)
+        const targetVol = 0.005 + (level * 0.035);
+
+        breathLfoRef.current.frequency.setTargetAtTime(targetRate, now, 2.0);
+
+        // Adjust the base gain ref
+        if (breathGainRef.current) {
+             breathGainRef.current.gain.setTargetAtTime(targetVol, now, 2.0);
+        }
     },
     resume: () => {
       if (audioContextRef.current?.state === 'suspended') {
@@ -375,6 +402,65 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
     bassSrc.start();
     windBassRef.current = bassGain;
 
+    // --- Breathing Synthesis ---
+    // Source: Pink Noise (reusing noiseBuffer)
+    const breathSrc = ctx.createBufferSource();
+    breathSrc.buffer = noiseBuffer;
+    breathSrc.loop = true;
+
+    // Filter: Lowpass to make it sound like air
+    const breathFilter = ctx.createBiquadFilter();
+    breathFilter.type = 'lowpass';
+    breathFilter.frequency.value = 400; // Base cutoff
+    breathFilter.Q.value = 0.5;
+
+    // Gain: Envelope
+    const breathGain = ctx.createGain();
+    breathGain.gain.value = 0.005; // Base low volume
+
+    // LFO for Breathing Cycle
+    const breathLfo = ctx.createOscillator();
+    breathLfo.type = 'sine';
+    breathLfo.frequency.value = 0.2; // 5s cycle
+
+    // LFO -> Filter Frequency Modulation
+    const lfoFilterGain = ctx.createGain();
+    lfoFilterGain.gain.value = 100; // Modulate +/- 100Hz
+    breathLfo.connect(lfoFilterGain).connect(breathFilter.frequency);
+
+    // LFO -> Volume Modulation (Respiration Cycle)
+    // We want the volume to oscillate 0..1 based on LFO
+    // We construct a signal 0..1 from the sine wave: (Sine + 1) / 2
+    const bias = ctx.createConstantSource();
+    bias.offset.value = 1.0;
+
+    const mixer = ctx.createGain();
+    mixer.gain.value = 0.5;
+
+    breathLfo.connect(mixer);
+    bias.connect(mixer);
+
+    // Modulate a secondary gain node
+    const breathCycleGain = ctx.createGain();
+    breathCycleGain.gain.value = 0; // Driven by mixer
+    mixer.connect(breathCycleGain.gain);
+
+    // Signal Path: Source -> Filter -> CycleGain -> MasterGain -> Destination
+    breathSrc.connect(breathFilter).connect(breathCycleGain).connect(breathGain).connect(ctx.destination);
+
+    // Internal resonance (Reverb)
+    const breathReverbSend = ctx.createGain();
+    breathReverbSend.gain.value = 0.2;
+    breathGain.connect(breathReverbSend).connect(convolver);
+
+    breathSrc.start();
+    breathLfo.start();
+    bias.start();
+
+    breathLfoRef.current = breathLfo;
+    breathGainRef.current = breathGain;
+    breathFilterRef.current = breathFilter;
+
     setIsReady(true);
 
     return () => {
@@ -386,6 +472,9 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
         waterSrc.stop();
         waterLFO.stop();
         bassSrc.stop();
+        breathSrc.stop();
+        breathLfo.stop();
+        bias.stop();
         ctx.close();
       } catch (e) {}
       setIsReady(false);
