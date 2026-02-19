@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { SoftShadows } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette, Noise, DepthOfField } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette, Noise, DepthOfField, GodRays } from '@react-three/postprocessing';
 import Controls from './Controls';
 import Terrain from './Terrain';
 import Path from './Path';
@@ -11,7 +11,7 @@ import Vegetation from './Vegetation';
 import Rocks from './Rocks';
 import { getTerrainHeight } from '../utils/terrain';
 
-const AtmosphericParticles = ({ color, type = 'dust', count = 2000 }) => {
+const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200, speedMultiplier = 1.0 }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
@@ -51,30 +51,32 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000 }) => {
     particles.forEach((particle, i) => {
         // Calculate position relative to camera to create infinite field
         // Box size 200x200 to ensure particles don't pop in/out visibly within fog
-        const range = 200;
-        const halfRange = range / 2;
+        const currentRange = range;
+        const halfRange = currentRange / 2;
 
         let z = particle.z;
         let x = particle.x;
 
+        const adjustedSpeed = particle.speed * speedMultiplier;
+
         // Custom Movement Logic
         if (type === 'snow' || type === 'leaves') {
              // Wind drift
-             z += time * particle.speed;
+             z += time * adjustedSpeed;
         } else {
              // Default wind
-             z += time * particle.speed;
+             z += time * adjustedSpeed;
         }
 
         // Wrap Z relative to camera
-        let dz = (z - camPos.z) % range;
-        if (dz < -halfRange) dz += range;
-        if (dz > halfRange) dz -= range;
+        let dz = (z - camPos.z) % currentRange;
+        if (dz < -halfRange) dz += currentRange;
+        if (dz > halfRange) dz -= currentRange;
 
         // Wrap X relative to camera
-        let dx = (x - camPos.x) % range;
-        if (dx < -halfRange) dx += range;
-        if (dx > halfRange) dx -= range;
+        let dx = (x - camPos.x) % currentRange;
+        if (dx < -halfRange) dx += currentRange;
+        if (dx > halfRange) dx -= currentRange;
 
         // Turbulence/Curl Noise approximation
         const turbFreq = 0.05;
@@ -165,6 +167,7 @@ const Scene = ({ region, audioEnabled }) => {
   const audioRef = useRef(null);
   const fogRef = useRef();
   const lightRef = useRef();
+  const sunRef = useRef();
   const dofRef = useRef();
 
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -213,6 +216,19 @@ const Scene = ({ region, audioEnabled }) => {
       const sunX = THREE.MathUtils.lerp(20, -20, time / 300); // 5 minutes to cross
       const sunY = THREE.MathUtils.lerp(30, 20, time / 300);
       lightRef.current.position.set(sunX, sunY, 10);
+
+      if (sunRef.current) {
+        sunRef.current.position.copy(lightRef.current.position);
+        // Push sun further back so it doesn't clip terrain but stays directionally correct
+        // Actually, for GodRays it needs to be behind the occluders (trees).
+        // The directional light is at z=10. The terrain is at z=0..500.
+        // Wait, directional light position is just a vector for direction.
+        // For the Sun Mesh to look real, it needs to be far away.
+        // Let's place it at a fixed distance along the light vector.
+        const sunDir = lightRef.current.position.clone().normalize();
+        sunRef.current.position.copy(state.camera.position).add(sunDir.multiplyScalar(400));
+        sunRef.current.lookAt(state.camera.position);
+      }
 
       // Cloud Shadows: Modulate intensity
       // Increased contrast for dynamic lighting
@@ -293,6 +309,20 @@ const Scene = ({ region, audioEnabled }) => {
 
       {/* Atmospheric particles */}
       <AtmosphericParticles color={region.particles} type={region.particleType} />
+      {/* Close-up "Macro" Particles for Parallax/Depth */}
+      <AtmosphericParticles
+        color={region.particles}
+        type={region.particleType}
+        count={300}
+        range={30}
+        speedMultiplier={2.5}
+      />
+
+      {/* Sun Mesh for GodRays */}
+      <mesh ref={sunRef} position={[20, 30, 10]}>
+        <sphereGeometry args={[10, 16, 16]} />
+        <meshBasicMaterial color="#fff7ed" />
+      </mesh>
 
       <EffectComposer disableNormalPass>
         <DepthOfField
@@ -302,6 +332,18 @@ const Scene = ({ region, audioEnabled }) => {
             bokehScale={2} /* Blur intensity */
             height={480}
         />
+        {sunRef.current && (
+          <GodRays
+            sun={sunRef.current}
+            samples={30}
+            density={0.95}
+            decay={0.9}
+            weight={0.6}
+            exposure={0.4}
+            clampMax={1.0}
+            blur={true}
+          />
+        )}
         <Bloom luminanceThreshold={1.0} mipmapBlur intensity={0.5} radius={0.6} />
         <Vignette eskil={false} offset={0.1} darkness={0.4} />
         <Noise opacity={0.02} />

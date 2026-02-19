@@ -31,6 +31,9 @@ const Controls = ({ audioRef }) => {
   // Uneven footing
   const wobbleRef = useRef(0);
 
+  // Exertion Level (0..1)
+  const exertionRef = useRef(0);
+
   useEffect(() => {
     // Initialize rotation state from current camera
     currentEuler.current.setFromQuaternion(camera.quaternion);
@@ -187,6 +190,8 @@ const Controls = ({ audioRef }) => {
 
     // Dynamic Speed based on Slope
     let currentWalkSpeed = WALK_SPEED;
+    let currentSlope = 0;
+
     // Check slope ahead if moving
     if (targetVelocity.lengthSq() > 0) {
         const dir = targetVelocity.clone().normalize();
@@ -194,15 +199,35 @@ const Controls = ({ audioRef }) => {
         const nextPos = camera.position.clone().add(dir.multiplyScalar(lookAhead));
         const currH = getTerrainHeight(camera.position.x, camera.position.z);
         const nextH = getTerrainHeight(nextPos.x, nextPos.z);
-        const slope = (nextH - currH) / lookAhead;
+        currentSlope = (nextH - currH) / lookAhead;
 
         // Uphill (slope > 0): Slower
         // Downhill (slope < 0): Faster
-        if (slope > 0) {
-             currentWalkSpeed = WALK_SPEED / (1.0 + slope * 3.0);
+        if (currentSlope > 0) {
+             currentWalkSpeed = WALK_SPEED / (1.0 + currentSlope * 3.0);
         } else {
-             currentWalkSpeed = WALK_SPEED * (1.0 - slope * 0.5);
+             currentWalkSpeed = WALK_SPEED * (1.0 - currentSlope * 0.5);
         }
+    }
+
+    // Update Exertion Level
+    // Base exertion when moving is 0.3
+    // + Slope factor (up to 0.7)
+    // - Recovery when stopped
+    let targetExertion = 0;
+    if (velocity.current.lengthSq() > 0.1) {
+        targetExertion = 0.3 + Math.max(0, currentSlope * 2.0);
+    }
+    // Clamp
+    targetExertion = Math.min(1.0, targetExertion);
+
+    // Smoothly interpolate exertion
+    // Rise fast (short of breath), recover slow
+    const exertionSpeed = targetExertion > exertionRef.current ? 0.5 : 0.2;
+    exertionRef.current = THREE.MathUtils.lerp(exertionRef.current, targetExertion, delta * exertionSpeed);
+
+    if (audioRef && audioRef.current && audioRef.current.setExertion) {
+        audioRef.current.setExertion(exertionRef.current);
     }
 
     // Normalize and scale to walk speed
@@ -270,6 +295,11 @@ const Controls = ({ audioRef }) => {
                 audioRef.current.playFootstep(surface);
                 audioRef.current.playGearRustle();
             }
+
+            // Add weight transfer roll on footstep
+            // Random slight roll left or right to simulate shifting weight
+            const rollDir = Math.random() > 0.5 ? 1 : -1;
+            targetBankRef.current += rollDir * 0.015;
         }
 
         lastBobPhase.current = currentPhase;
