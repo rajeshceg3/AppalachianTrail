@@ -172,3 +172,26 @@ export const getTerrainNormal = (x, z) => {
   const normal = new Vector3().crossVectors(v2, v1).normalize();
   return normal;
 };
+
+/**
+ * Calculates the minimum terrain height within a radius.
+ * Used for grounding objects so they don't float.
+ */
+export const getMinTerrainHeight = (x, z, radius) => {
+    // Check center and 4 cardinal points
+    let minH = getTerrainHeight(x, z);
+
+    const offsets = [
+        [radius, 0],
+        [-radius, 0],
+        [0, radius],
+        [0, -radius]
+    ];
+
+    for (const [dx, dz] of offsets) {
+        const h = getTerrainHeight(x + dx, z + dz);
+        if (h < minH) minH = h;
+    }
+
+    return minH;
+};

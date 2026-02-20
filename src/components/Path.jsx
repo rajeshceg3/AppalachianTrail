@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import * as THREE from 'three';
-import { getPathX, getTerrainHeight, getTerrainNormal } from '../utils/terrain';
+import { getPathX, getTerrainHeight, getTerrainNormal, noise2D } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap, generateAlphaMap } from '../utils/textureGenerator';
 
 const Path = ({ color }) => {
@@ -57,10 +57,15 @@ const Path = ({ color }) => {
       const uvs = [];
       const indices = [];
 
-      const width = 2.0; // Width of the trail
+      const baseWidth = 2.0; // Base width of the trail
 
       for (let i = 0; i < pathPoints.length; i++) {
         const point = pathPoints[i];
+
+        // Modulate width with noise for organic feel
+        // Use both coordinates to ensure variation regardless of direction
+        const wNoise = noise2D(point.x * 0.1, point.z * 0.1);
+        const width = baseWidth + wNoise * 0.5;
 
         // Calculate tangent to find perpendicular vector
         let tangent;

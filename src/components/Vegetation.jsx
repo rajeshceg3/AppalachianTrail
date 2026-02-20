@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useLayoutEffect } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getTerrainHeight, getPathX, noise2D, createSeededRandom } from '../utils/terrain';
+import { getTerrainHeight, getPathX, noise2D, createSeededRandom, getMinTerrainHeight } from '../utils/terrain';
 import { applyWindShader } from '../materials/WindShader';
 
 // Helper to hash string to integer
@@ -243,9 +243,12 @@ const Vegetation = ({ region }) => {
 
       if (rng() > placementProb) continue;
 
-      // Sink deeper to hide intersection
-      const y = getTerrainHeight(x, z) - (0.1 + rng() * 0.25);
       const scale = 0.5 * Math.exp(rng() * 1.3);
+
+      // Grounding: Ensure the lowest point of the trunk base sits on the terrain
+      // Cylinder base radius is 0.25
+      const trunkRadius = 0.25 * scale;
+      const y = getMinTerrainHeight(x, z, trunkRadius) - (0.05 + rng() * 0.1);
       const rotation = rng() * Math.PI * 2;
       const tiltX = (rng() - 0.5) * 0.2;
       const tiltZ = (rng() - 0.5) * 0.2;
