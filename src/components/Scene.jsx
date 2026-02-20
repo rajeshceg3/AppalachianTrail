@@ -9,9 +9,11 @@ import Path from './Path';
 import AudioController from './AudioController';
 import Vegetation from './Vegetation';
 import Rocks from './Rocks';
+import GroundClutter from './GroundClutter';
 import { getTerrainHeight } from '../utils/terrain';
+import { getWindGustFactor } from '../utils/wind';
 
-const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200, speedMultiplier = 1.0 }) => {
+const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200, speedMultiplier = 1.0, additive = false }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
@@ -158,6 +160,7 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200,
         opacity={type === 'mist' ? 0.1 : 0.3}
         depthWrite={false}
         side={THREE.DoubleSide}
+        blending={additive ? THREE.AdditiveBlending : THREE.NormalBlending}
       />
     </instancedMesh>
   );
@@ -165,6 +168,7 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200,
 
 const Scene = ({ region, audioEnabled }) => {
   const audioRef = useRef(null);
+  const windRef = useRef({ intensity: 0, gust: 0, cloud: 0 }); // Shared wind/weather state
   const fogRef = useRef();
   const lightRef = useRef();
   const sunRef = useRef();
@@ -191,53 +195,48 @@ const Scene = ({ region, audioEnabled }) => {
       // Decrease density by up to 60% at height 30 relative to base 5.
       const heightFactor = Math.max(0.4, 1.0 - (Math.max(0, camY - 5) * 0.025));
 
+      // Calculate cloud noise locally for both fog and light sync
+      // Cloud Shadows: Modulate intensity
+      const cloudNoise = Math.sin(time * 0.1) * 0.3 + Math.sin(time * 0.03 + 4.0) * 0.3;
+
+      // Update Shared Wind State
+      const gustFactor = getWindGustFactor(state.camera.position.x, state.camera.position.z, time);
+      windRef.current.intensity = region.windIntensity || 0.5;
+      windRef.current.gust = gustFactor;
+      windRef.current.cloud = cloudNoise;
+
       // Clouds shadow effect on fog (density varies slowly)
-      // Added a subtle high-frequency component (0.5) to match wind gust rhythm
-      const cloudNoise = Math.sin(time * 0.1) * 0.1 + Math.sin(time * 0.05 + 10) * 0.1 + Math.sin(time * 0.5) * 0.02;
-      density *= (1.0 + cloudNoise);
+      // Use the calculated cloudNoise but scaled down for fog density
+      const fogCloudFactor = cloudNoise * 0.3; // Less drastic on fog
+      density *= (1.0 + fogCloudFactor);
 
       fogRef.current.density = density * heightFactor;
     }
 
     if (lightRef.current) {
       // Sunlight warming effect
-      // Start cool white, transition to warm amber over 60s
-      const warmColor = new THREE.Color('#fff7ed'); // Warm white/amber tint
-      const baseColor = new THREE.Color('#ffffff'); // Cool white
-
-      // Progress over 60 seconds
+      const warmColor = new THREE.Color('#fff7ed');
+      const baseColor = new THREE.Color('#ffffff');
       const warmProgress = Math.min(1.0, time / 60.0);
-
-      // Lerp color
       lightRef.current.color.lerpColors(baseColor, warmColor, warmProgress);
 
-      // Dynamic Sun Position (Simulate passage of time)
-      // Start at [20, 30, 10], Move slowly towards [-20, 20, 10]
-      const sunX = THREE.MathUtils.lerp(20, -20, time / 300); // 5 minutes to cross
+      // Dynamic Sun Position
+      const sunX = THREE.MathUtils.lerp(20, -20, time / 300);
       const sunY = THREE.MathUtils.lerp(30, 20, time / 300);
       lightRef.current.position.set(sunX, sunY, 10);
 
       if (sunRef.current) {
-        sunRef.current.position.copy(lightRef.current.position);
-        // Push sun further back so it doesn't clip terrain but stays directionally correct
-        // Actually, for GodRays it needs to be behind the occluders (trees).
-        // The directional light is at z=10. The terrain is at z=0..500.
-        // Wait, directional light position is just a vector for direction.
-        // For the Sun Mesh to look real, it needs to be far away.
-        // Let's place it at a fixed distance along the light vector.
+        // Ensure sun is always "behind" the scene relative to camera for GodRays
         const sunDir = lightRef.current.position.clone().normalize();
+        // Place sun far away along the light direction
         sunRef.current.position.copy(state.camera.position).add(sunDir.multiplyScalar(400));
         sunRef.current.lookAt(state.camera.position);
       }
 
-      // Cloud Shadows: Modulate intensity
-      // Increased contrast for dynamic lighting
-      const cloudNoise = Math.sin(time * 0.1) * 0.3 + Math.sin(time * 0.03 + 4.0) * 0.3;
       // Map noise -0.6..0.6 to factor 0.4..1.2
-      // 0.4 = deep shadow, 1.2 = bright sun burst
+      const cloudNoise = windRef.current.cloud; // Use the stored value
       const cloudFactor = THREE.MathUtils.mapLinear(cloudNoise, -0.6, 0.6, 0.4, 1.2);
 
-      // Intensity pulse + slow increase + clouds
       const baseIntensity = 1.0 + Math.sin(time * 0.3) * 0.03 + (warmProgress * 0.2);
       lightRef.current.intensity = Math.max(0.1, baseIntensity * cloudFactor);
     }
@@ -282,7 +281,7 @@ const Scene = ({ region, audioEnabled }) => {
 
   return (
     <>
-      <AudioController ref={audioRef} region={region} enabled={audioEnabled} />
+      <AudioController ref={audioRef} region={region} enabled={audioEnabled} windRef={windRef} />
       <Controls audioRef={audioRef} />
       <fogExp2 ref={fogRef} attach="fog" args={[region.fogColor, region.fogDensity]} />
       <SoftShadows size={25} samples={10} focus={0.5} />
@@ -306,6 +305,7 @@ const Scene = ({ region, audioEnabled }) => {
 
       <Vegetation region={region} />
       <Rocks region={region} />
+      <GroundClutter region={region} />
 
       {/* Atmospheric particles */}
       <AtmosphericParticles color={region.particles} type={region.particleType} />
@@ -316,6 +316,15 @@ const Scene = ({ region, audioEnabled }) => {
         count={300}
         range={30}
         speedMultiplier={2.5}
+      />
+      {/* Volumetric Pollen/Dust (Reacts to light shafts) */}
+      <AtmosphericParticles
+        color="#fff7d0" // Warm dust
+        type="dust"
+        count={1000}
+        range={40}
+        speedMultiplier={4.0} // High speed for turbulent feel
+        additive={true}
       />
 
       {/* Sun Mesh for GodRays */}

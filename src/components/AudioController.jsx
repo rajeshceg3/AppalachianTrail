@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import { useThree } from '@react-three/fiber';
+import * as THREE from 'three';
 import { getWindGustFactor } from '../utils/wind';
 
-const AudioController = forwardRef(({ region, enabled = true }, ref) => {
+const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) => {
   const audioContextRef = useRef(null);
   const { camera } = useThree(); // Access camera for height-based modulation
 
@@ -498,7 +499,24 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
       let windIntensity = (region.windIntensity || 0.5) * heightFactor;
       windIntensity = Math.min(1.2, windIntensity);
 
+      // Retrieve shared wind state if available
+      let gustFactor = 1.0;
+      let cloudFactor = 0.0; // 0 is neutral
+
+      if (windRef && windRef.current) {
+          // Use shared gust factor for perfect sync
+          gustFactor = windRef.current.gust;
+          cloudFactor = windRef.current.cloud;
+      } else {
+          // Fallback
+          gustFactor = getWindGustFactor(camera.position.x, camera.position.z, time);
+      }
+
       const now = ctx.currentTime;
+
+      // Modulate ambience based on cloud cover (darker = quieter)
+      // cloudFactor is approx -0.6 to 0.6
+      const sunMod = THREE.MathUtils.mapLinear(cloudFactor, -0.6, 0.6, 0.5, 1.0);
 
       // Update Drone
       if (droneRef.current) {
@@ -506,13 +524,8 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
           // Deeper drone for mountains/high wind
           const targetFreq = region.environment === 'sunset' ? 65 : (region.environment === 'forest' ? 55 : 45);
           droneRef.current.osc.frequency.setTargetAtTime(targetFreq, now, 0.5);
-          droneRef.current.gain.gain.setTargetAtTime(droneBase, now, 1.0);
+          droneRef.current.gain.gain.setTargetAtTime(droneBase * sunMod, now, 1.0);
       }
-
-      // --- Wind Gust Logic (Synced with Visuals) ---
-      // Uses the same math as the vertex shader for coherent immersion.
-      // If the user sees a gust hit the trees around them, they hear it too.
-      const gustFactor = getWindGustFactor(camera.position.x, camera.position.z, time);
 
       // Stereo Wind Updates
       // Left/Right fluctuation
@@ -564,7 +577,8 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
           const windSuppress = Math.max(0, 1.0 - windIntensity * 0.8);
           const insectPulse = 0.8 + Math.sin(time * 8) * 0.2;
 
-          const targetInsect = insectBase * windSuppress * insectPulse;
+          // Insects also quiet down when a cloud passes
+          const targetInsect = insectBase * windSuppress * insectPulse * sunMod;
           insectsGainRef.current.gain.setTargetAtTime(targetInsect, now, 0.5);
       }
 
@@ -619,8 +633,11 @@ const AudioController = forwardRef(({ region, enabled = true }, ref) => {
           const panner = ctx.createStereoPanner();
           const distFilter = ctx.createBiquadFilter();
 
-          // Panning (Random L/R)
-          panner.pan.value = (Math.random() * 2) - 1;
+          // Panning (Dynamic Movement - Flyby)
+          const startPan = (Math.random() * 2) - 1;
+          const endPan = startPan + (Math.random() - 0.5) * 0.8; // Move slightly
+          panner.pan.setValueAtTime(startPan, t);
+          panner.pan.linearRampToValueAtTime(endPan, t + 4.0); // Fly across over 4s
 
           // Distance Filtering (Lowpass)
           // Close = 12kHz, Far = 800Hz
