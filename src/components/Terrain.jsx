@@ -111,9 +111,13 @@ const Terrain = ({ color }) => {
       c.lerp(highPeak, peakFactor * 0.4);
 
       // --- Noise Texturing ---
+      // Low frequency noise for large scale variation
+      const lfN = noise2D(x * 0.005, -y * 0.005);
+
       // Subtle darkening/lightening for "dirt" vs "grass"
       // range -0.05 to +0.05
-      c.offsetHSL(0, 0, n * 0.04);
+      // Combined with low frequency noise
+      c.offsetHSL(0, 0, n * 0.04 + lfN * 0.03);
 
       colors[i * 3] = c.r;
       colors[i * 3 + 1] = c.g;

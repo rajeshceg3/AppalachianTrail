@@ -61,9 +61,14 @@
   - **Boundaries**: Implemented soft velocity damping and increased resistance to prevent world-edge visibility.
   - **Atmosphere**: Increased fog density to mask horizon seamlessly.
   - **Verification**: Validated visual density and naturalism with Playwright automation.
+- **Ultrathink Naturalism Refinement**:
+  - **Grounding Logic**: Implemented multi-point height sampling (`getMinTerrainHeight`) to prevent floating vegetation and rocks on steep slopes.
+  - **Path Modulation**: Modulated path width with 2D noise for organic, non-uniform trail shape.
+  - **Terrain Variation**: Added low-frequency noise layer to terrain vertex colors to eliminate tiling artifacts.
+  - **Verification**: Confirmed logic correctness with unit tests and visual checks.
 
 ## Completed Requirements
-- [x] Tech stack setup (React, Three.js, GSAP/Framer Motion, Tailwind).
+- [x] Tech stack setup (React, Vite, Three.js, GSAP/Framer Motion, Tailwind).
 - [x] Landing screen experience.
 - [x] Basic topographic map system.
 - [x] Region selection logic (All 6 regions unlockable).
@@ -81,6 +86,7 @@
 - [x] UX Redesign (Vertical Journey Map, Dynamic Particles).
 - [x] Ultrathink Organic Polish (Physics Camera, FBM Textures, Rock Shaders).
 - [x] Final Density & Scale Expansion.
+- [x] Robust Grounding & Natural Variation.
 
 ## Next Steps
 - Final deployment configuration (external).

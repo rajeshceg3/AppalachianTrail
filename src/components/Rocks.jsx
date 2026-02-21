@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
-import { getTerrainHeight, getPathX, noise2D, createSeededRandom } from '../utils/terrain';
+import { getTerrainHeight, getPathX, noise2D, createSeededRandom, getMinTerrainHeight } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
 import { applyRockShader } from '../materials/RockShader';
 
@@ -53,8 +53,6 @@ const Rocks = ({ region }) => {
 
       if (rng() > finalProb) continue;
 
-      const y = getTerrainHeight(x, z);
-
       // Scale
       const baseScale = 0.3 + rng() * 1.2;
       const scale = [
@@ -63,15 +61,20 @@ const Rocks = ({ region }) => {
           baseScale * (0.7 + rng() * 0.6)
       ];
 
+      // Grounding: Sample minimum height within the rock's footprint
+      // Rock radius is approx 1.0 * scale[0] (icosahedron radius 1)
+      const radius = scale[0];
+      const minH = getMinTerrainHeight(x, z, radius);
+
       const rotation = [
         rng() * Math.PI * 2,
         rng() * Math.PI * 2,
         rng() * Math.PI * 2
       ];
 
-      // Embed deep
-      // Extra sink to avoid floating, randomized
-      const yPos = y - (0.2 * scale[1]) - (0.05 + rng() * 0.1);
+      // Embed deep: Use minH minus a significant portion of height to look buried
+      // Center at minH - 0.3 * height (radius)
+      const yPos = minH - (0.3 * scale[1]);
 
       rocks.push({ position: [x, yPos, z], scale, rotation });
     }
