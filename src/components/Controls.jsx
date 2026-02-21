@@ -31,6 +31,9 @@ const Controls = ({ audioRef }) => {
   // Uneven footing
   const wobbleRef = useRef(0);
 
+  // Landing impact (thud)
+  const landingRef = useRef(0);
+
   // Exertion Level (0..1)
   const exertionRef = useRef(0);
 
@@ -171,7 +174,7 @@ const Controls = ({ audioRef }) => {
     // --- Smooth Look Rotation ---
     // Interpolate current rotation towards target rotation
     // Lower damping for heavier, smoother feel
-    const lookDamping = 5.0;
+    const lookDamping = 3.5; // Heavier feel
     currentEuler.current.x = THREE.MathUtils.lerp(currentEuler.current.x, targetEuler.current.x, delta * lookDamping);
     currentEuler.current.y = THREE.MathUtils.lerp(currentEuler.current.y, targetEuler.current.y, delta * lookDamping);
 
@@ -300,6 +303,9 @@ const Controls = ({ audioRef }) => {
             // Random slight roll left or right to simulate shifting weight
             const rollDir = Math.random() > 0.5 ? 1 : -1;
             targetBankRef.current += rollDir * 0.015;
+
+            // Landing Thud (Physicality)
+            landingRef.current = -0.06;
         }
 
         lastBobPhase.current = currentPhase;
@@ -308,6 +314,9 @@ const Controls = ({ audioRef }) => {
         bobRef.current = THREE.MathUtils.lerp(bobRef.current, Math.round(bobRef.current / Math.PI) * Math.PI, delta * 5);
         lastBobPhase.current = bobRef.current % (Math.PI * 2);
     }
+
+    // Decay landing impulse
+    landingRef.current = THREE.MathUtils.lerp(landingRef.current, 0, delta * 6.0);
 
     // Breathing Sway (always active)
     breathRef.current += delta * 0.5;
@@ -328,9 +337,9 @@ const Controls = ({ audioRef }) => {
     // Terrain following
     const groundHeight = getTerrainHeight(camera.position.x, camera.position.z);
 
-    // Camera height is ground + eye height + bob + breath
+    // Camera height is ground + eye height + bob + breath + landing thud
     // Smoothly adjust to ground changes
-    const targetY = groundHeight + 1.7 + bobAmount + breathY;
+    const targetY = groundHeight + 1.7 + bobAmount + breathY + landingRef.current;
 
     // Initial Snap or Smooth Lerp
     if (!isInitialized.current) {
