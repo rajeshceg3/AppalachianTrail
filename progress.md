@@ -6,6 +6,7 @@
 - Map View: Interactive topographic-style map with all 6 regions selectable.
   - **Refined Interaction**: Added soft glow effects and smooth transitions on hover.
   - **UX Overhaul**: Redesigned as a vertical, scrolling "Path North" experience with SVG animations.
+  - **Bug Fix**: Fixed initial scroll position logic (`useLayoutEffect`) and removed container clipping to resolve invisible region issue.
 - Experience:
   - Dynamic 3D environment loading based on selected region.
   - "Walk" mechanic implemented (W/S keys + Drag to look).
@@ -87,6 +88,7 @@
 - [x] Ultrathink Organic Polish (Physics Camera, FBM Textures, Rock Shaders).
 - [x] Final Density & Scale Expansion.
 - [x] Robust Grounding & Natural Variation.
+- [x] Fixed Map View scrolling bug.
 
 ## Next Steps
 - Final deployment configuration (external).
