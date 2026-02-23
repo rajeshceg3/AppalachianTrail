@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, useState } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import MapAmbience from './MapAmbience';
 
@@ -52,7 +52,7 @@ const MapView = ({ regions, onSelectRegion }) => {
   // The user will start at the bottom and scroll up.
   const reversedRegions = useMemo(() => [...regions].reverse(), [regions]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Start at the bottom (South / Georgia)
     window.scrollTo(0, document.body.scrollHeight);
   }, []);
@@ -112,7 +112,7 @@ const MapView = ({ regions, onSelectRegion }) => {
   };
 
   return (
-    <div ref={containerRef} className="w-full relative bg-[#fcfaf7] min-h-screen overflow-hidden">
+    <div ref={containerRef} className="w-full relative bg-[#fcfaf7] min-h-screen">
         <MapAmbience scrollYProgress={scrollYProgress} />
 
         <motion.div
