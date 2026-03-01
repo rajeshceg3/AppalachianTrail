@@ -173,6 +173,7 @@ const Scene = ({ region, audioEnabled }) => {
   const lightRef = useRef();
   const sunRef = useRef();
   const dofRef = useRef();
+  const terrainRef = useRef();
 
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const screenCenter = useMemo(() => new THREE.Vector2(0, 0), []);
@@ -246,20 +247,17 @@ const Scene = ({ region, audioEnabled }) => {
         frameCount.current++;
 
         // Raycast only every 15 frames for performance
-        if (frameCount.current % 15 === 0) {
+        if (frameCount.current % 15 === 0 && terrainRef.current) {
             // Set raycaster from camera to center of screen
             raycaster.setFromCamera(screenCenter, state.camera);
             raycaster.far = 50;
-            const intersects = raycaster.intersectObjects(state.scene.children, true);
+
+            // Raycast ONLY against the terrain mesh, not the entire scene
+            const intersects = raycaster.intersectObject(terrainRef.current, false);
 
             let hit = null;
-            // Find first visible object
-            for(let i=0; i<intersects.length; i++) {
-                 // Ignore particles or invisible objects
-                 if (intersects[i].object.visible && intersects[i].object.type !== 'Points') {
-                     hit = intersects[i].point;
-                     break;
-                 }
+            if (intersects.length > 0) {
+                hit = intersects[0].point;
             }
 
             if (hit) {
@@ -300,7 +298,7 @@ const Scene = ({ region, audioEnabled }) => {
         <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50, 0.5, 100]} />
       </directionalLight>
 
-      <Terrain color={region.groundColor} />
+      <Terrain ref={terrainRef} color={region.groundColor} />
       <Path color={region.pathColor || '#8b7355'} />
 
       <Vegetation region={region} />

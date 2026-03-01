@@ -37,6 +37,13 @@ const Controls = ({ audioRef }) => {
   // Exertion Level (0..1)
   const exertionRef = useRef(0);
 
+  // Pre-allocate vectors to avoid GC pressure in useFrame
+  const forwardVec = useRef(new THREE.Vector3());
+  const targetVelocityVec = useRef(new THREE.Vector3());
+  const nextPosVec = useRef(new THREE.Vector3());
+  const currentPosVec = useRef(new THREE.Vector3());
+  const dirVec = useRef(new THREE.Vector3());
+
   useEffect(() => {
     // Initialize rotation state from current camera
     currentEuler.current.setFromQuaternion(camera.quaternion);
@@ -181,27 +188,27 @@ const Controls = ({ audioRef }) => {
 
     // --- Movement Logic ---
     // Calculate Forward vector (ignoring Y)
-    const forward = new THREE.Vector3(0, 0, -1);
-    forward.applyQuaternion(camera.quaternion);
-    forward.y = 0;
-    forward.normalize();
+    forwardVec.current.set(0, 0, -1);
+    forwardVec.current.applyQuaternion(camera.quaternion);
+    forwardVec.current.y = 0;
+    forwardVec.current.normalize();
 
     // Determine target velocity based on input
-    const targetVelocity = new THREE.Vector3();
-    if (moveForward.current) targetVelocity.add(forward);
-    if (moveBackward.current) targetVelocity.sub(forward);
+    targetVelocityVec.current.set(0, 0, 0);
+    if (moveForward.current) targetVelocityVec.current.add(forwardVec.current);
+    if (moveBackward.current) targetVelocityVec.current.sub(forwardVec.current);
 
     // Dynamic Speed based on Slope
     let currentWalkSpeed = WALK_SPEED;
     let currentSlope = 0;
 
     // Check slope ahead if moving
-    if (targetVelocity.lengthSq() > 0) {
-        const dir = targetVelocity.clone().normalize();
+    if (targetVelocityVec.current.lengthSq() > 0) {
+        dirVec.current.copy(targetVelocityVec.current).normalize();
         const lookAhead = 1.0;
-        const nextPos = camera.position.clone().add(dir.multiplyScalar(lookAhead));
+        nextPosVec.current.copy(camera.position).add(dirVec.current.multiplyScalar(lookAhead));
         const currH = getTerrainHeight(camera.position.x, camera.position.z);
-        const nextH = getTerrainHeight(nextPos.x, nextPos.z);
+        const nextH = getTerrainHeight(nextPosVec.current.x, nextPosVec.current.z);
         currentSlope = (nextH - currH) / lookAhead;
 
         // Uphill (slope > 0): Slower
@@ -234,19 +241,19 @@ const Controls = ({ audioRef }) => {
     }
 
     // Normalize and scale to walk speed
-    if (targetVelocity.lengthSq() > 0) {
-        targetVelocity.normalize().multiplyScalar(currentWalkSpeed);
+    if (targetVelocityVec.current.lengthSq() > 0) {
+        targetVelocityVec.current.normalize().multiplyScalar(currentWalkSpeed);
     }
 
     // Apply Inertia: Smoothly interpolate current velocity towards target velocity
     // Lower factor = more inertia (slower start/stop)
-    velocity.current.lerp(targetVelocity, delta * 1.5);
+    velocity.current.lerp(targetVelocityVec.current, delta * 1.5);
 
     // --- Soft Boundaries Logic ---
     // Prevent walking too far from path
-    const currentPos = camera.position.clone();
-    const pathX = getPathX(currentPos.z);
-    const distToPath = currentPos.x - pathX;
+    currentPosVec.current.copy(camera.position);
+    const pathX = getPathX(currentPosVec.current.z);
+    const distToPath = currentPosVec.current.x - pathX;
     const MAX_DIST = 30.0; // Stay within 30 units of path
 
     // Push back force if too far
@@ -260,9 +267,9 @@ const Controls = ({ audioRef }) => {
 
     // Prevent walking off the ends of the world
     const MAX_Z = 550.0;
-    if (Math.abs(currentPos.z) > MAX_Z) {
-         const pushDir = currentPos.z > 0 ? -1 : 1;
-         const resistance = (Math.abs(currentPos.z) - MAX_Z) * 10.0;
+    if (Math.abs(currentPosVec.current.z) > MAX_Z) {
+         const pushDir = currentPosVec.current.z > 0 ? -1 : 1;
+         const resistance = (Math.abs(currentPosVec.current.z) - MAX_Z) * 10.0;
          velocity.current.z += pushDir * resistance * delta;
     }
 

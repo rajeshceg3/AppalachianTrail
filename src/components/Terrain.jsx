@@ -1,12 +1,14 @@
-import React, { useLayoutEffect, useRef, useMemo, useEffect } from 'react';
+import React, { useLayoutEffect, useRef, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX, noise2D } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
 
-const terrainArgs = [1200, 1200, 1024, 1024];
+const terrainArgs = [1200, 1200, 512, 512]; // Reduced segments for better generation & culling performance
 
-const Terrain = ({ color }) => {
+const Terrain = forwardRef(({ color }, ref) => {
   const meshRef = useRef();
+
+  useImperativeHandle(ref, () => meshRef.current);
 
   const { roughnessMap, normalMap } = useMemo(() => {
     // Higher resolution and scale to reduce visible tiling pattern
@@ -15,7 +17,7 @@ const Terrain = ({ color }) => {
     rMap.wrapT = THREE.RepeatWrapping;
     rMap.repeat.set(8, 8);
 
-    const nMap = generateNormalMap(1024, 1024, 8.0, 4, 1.0);
+    const nMap = generateNormalMap(1024, 1024, 8.0, 4, 1.0, rMap.userData.imageData);
     nMap.wrapS = THREE.RepeatWrapping;
     nMap.wrapT = THREE.RepeatWrapping;
     nMap.repeat.set(8, 8);
@@ -126,6 +128,10 @@ const Terrain = ({ color }) => {
 
     colorAttribute.needsUpdate = true;
 
+    // Compute bounding geometry so frustum culling works correctly
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+
   }, [baseColor]); // Re-run when region color changes
 
   return (
@@ -133,7 +139,7 @@ const Terrain = ({ color }) => {
       ref={meshRef}
       rotation={[-Math.PI / 2, 0, 0]}
       receiveShadow
-      frustumCulled={false} // Prevent culling due to displacement
+      frustumCulled={true} // Re-enabled culling after computing bounds
     >
       <planeGeometry args={terrainArgs} />
       <meshStandardMaterial
@@ -146,6 +152,6 @@ const Terrain = ({ color }) => {
       />
     </mesh>
   );
-};
+});
 
 export default Terrain;

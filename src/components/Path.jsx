@@ -14,7 +14,7 @@ const Path = ({ color }) => {
     rMap.repeat.set(2, 200);
 
     // Normal Map: Matching frequency but bumping it
-    const nMap = generateNormalMap(512, 512, 10.0, 4, 3.0);
+    const nMap = generateNormalMap(512, 512, 10.0, 4, 3.0, rMap.userData.imageData);
     nMap.wrapS = THREE.RepeatWrapping;
     nMap.wrapT = THREE.RepeatWrapping;
     nMap.repeat.set(2, 200);
