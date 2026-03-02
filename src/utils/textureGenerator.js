@@ -91,7 +91,7 @@ export function generateHeightMap(width = 512, height = 512, scale = 8.0, octave
  * @param {number} strength - Strength of the normal effect (bumpiness).
  * @returns {THREE.CanvasTexture} The generated normal map.
  */
-export function generateNormalMap(width = 512, height = 512, scale = 8.0, octaves = 6, strength = 2.0) { // Increased scale and octaves
+export function generateNormalMap(width = 512, height = 512, scale = 8.0, octaves = 6, strength = 2.0, heightImageData = null) { // Increased scale and octaves
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -102,9 +102,13 @@ export function generateNormalMap(width = 512, height = 512, scale = 8.0, octave
   const twoPi = Math.PI * 2;
 
   // Helper to sample height at (x, y)
-  // We re-compute noise here. Optimization: could reuse heightmap buffer if passed.
-  // But computing per pixel is fine for initialization.
+  // Re-use heightmap buffer if passed, otherwise re-compute.
   const sampleHeight = (x, y) => {
+      if (heightImageData) {
+          // Height is stored in the Red channel (0-255)
+          const index = (y * width + x) * 4;
+          return (heightImageData.data[index] / 255.0) * 2.0 - 1.0; // Map back to approx -1..1
+      }
       const u = (x / width) * twoPi;
       const v = (y / height) * twoPi;
       const nx = Math.cos(u) * scale;

@@ -120,9 +120,11 @@ const Rocks = ({ region }) => {
   }, [region.id, rockCount, pebbleCount]);
 
   const { roughnessMap, normalMap } = useMemo(() => {
+    const rMap = generateHeightMap(256, 256, 4.0, 4);
+    const nMap = generateNormalMap(256, 256, 4.0, 4, 3.0, rMap.userData.imageData);
     return {
-        roughnessMap: generateHeightMap(256, 256, 4.0, 4),
-        normalMap: generateNormalMap(256, 256, 4.0, 4, 3.0)
+        roughnessMap: rMap,
+        normalMap: nMap
     };
   }, []);
 
