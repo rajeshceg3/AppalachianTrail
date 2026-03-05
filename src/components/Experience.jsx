@@ -17,7 +17,12 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
 
   return (
     <div className="w-full h-screen relative" style={{ backgroundColor: selectedRegion.color }}>
-      <Canvas shadows>
+      <Canvas
+        shadows
+        dpr={[1, 1.5]}
+        performance={{ min: 0.5 }}
+        gl={{ antialias: false, powerPreference: "high-performance" }}
+      >
         <PerspectiveCamera makeDefault position={[0, 1.7, 8]} fov={45} />
 
         <color attach="background" args={[selectedRegion.fogColor]} />
