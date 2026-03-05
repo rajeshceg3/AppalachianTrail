@@ -207,7 +207,11 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 
 const Vegetation = ({ region }) => {
   // Increased tree count for larger terrain (1200x1200)
-  const treeCount = region.environment === 'forest' ? 8000 : 3000;
+  const baseCount = region.environment === 'forest' ? 8000 : 3000;
+
+  // Apply vegetationParams multipliers
+  const vegParams = region.vegetationParams || { density: 1.0, coniferRatio: 0.7 };
+  const treeCount = Math.floor(baseCount * vegParams.density);
 
   const { conifer, broadleaf } = useMemo(() => {
     const conifer = [];
@@ -248,7 +252,7 @@ const Vegetation = ({ region }) => {
       // Grounding: Ensure the lowest point of the trunk base sits on the terrain
       // Cylinder base radius is 0.25
       const trunkRadius = 0.25 * scale;
-      const y = getMinTerrainHeight(x, z, trunkRadius) - (0.05 + rng() * 0.1);
+      const y = getMinTerrainHeight(x, z, trunkRadius, region.terrainParams) - (0.05 + rng() * 0.1);
       const rotation = rng() * Math.PI * 2;
       const tiltX = (rng() - 0.5) * 0.2;
       const tiltZ = (rng() - 0.5) * 0.2;
@@ -271,16 +275,15 @@ const Vegetation = ({ region }) => {
       };
 
       // Determine type based on region and randomness
-      // Default to 70% conifer, 30% broadleaf
-      // Adjust per region if needed (hardcoded for now to prove concept)
-      if (rng() > 0.3) {
+      // Adjust per region using coniferRatio (default 0.7 means 70% conifer, so rng < 0.7 is conifer)
+      if (rng() < vegParams.coniferRatio) {
         conifer.push(tree);
       } else {
         broadleaf.push(tree);
       }
     }
     return { conifer, broadleaf };
-  }, [region.id, treeCount, region.treeColor1, region.treeColor2]);
+  }, [region.id, treeCount, region.treeColor1, region.treeColor2, vegParams.coniferRatio]);
 
   // Split conifer data into chunks for variety
   const coniferClusters = useMemo(() => {

@@ -88,19 +88,19 @@ export const getPathX = (z) => {
  * Uses FBM and ridged noise for organic, eroded look.
  * Flattens the terrain near the path to create a walkable surface.
  */
-export const getTerrainHeight = (x, z) => {
+export const getTerrainHeight = (x, z, params = { roughness: 1.0, plateau: false, coastal: false, baseHeight: 0.0 }) => {
   const pathX = getPathX(z);
   const dist = Math.abs(x - pathX);
 
   // --- Terrain Noise Generation ---
 
   // 1. Base Layer: Large rolling hills (FBM)
-  // Low frequency (0.005), High amplitude (12.0)
-  let y = fbm(x, z, 4, 0.5, 2.0, 0.005) * 12.0;
+  // Low frequency (0.005), High amplitude (12.0) * roughness
+  let y = fbm(x, z, 4, 0.5, 2.0, 0.005) * 12.0 * params.roughness;
 
   // 2. Erosion Layer: Ridged noise for sharp features/cliffs
   // Mix in some ridged noise for visual interest
-  const ridge = ridgedNoise(x, z, 3, 0.5, 2.0, 0.01) * 6.0;
+  const ridge = ridgedNoise(x, z, 3, 0.5, 2.0, 0.01) * 6.0 * params.roughness;
 
   // Blend base and ridge based on another noise layer (mask)
   const ridgeMask = (noise2D(x * 0.008, z * 0.008) + 1) * 0.5; // 0 to 1
@@ -108,11 +108,36 @@ export const getTerrainHeight = (x, z) => {
 
   // 3. Detail Layer: Roughness/Texture
   // High frequency (0.1), Low amplitude (0.5)
-  y += fbm(x, z, 3, 0.5, 2.0, 0.1) * 0.5;
+  y += fbm(x, z, 3, 0.5, 2.0, 0.1) * 0.5 * params.roughness;
 
   // 4. Micro Detail: Ground texture (pebbles)
   // Very high frequency (1.5), Very low amplitude (0.05)
-  y += noise2D(x * 1.5, z * 1.5) * 0.05;
+  y += noise2D(x * 1.5, z * 1.5) * 0.05 * params.roughness;
+
+  // Add base height
+  y += params.baseHeight;
+
+  // 5. Plateau Logic
+  if (params.plateau) {
+      // Flatten tops of hills, leaving jagged edges
+      const plateauLevel = params.baseHeight + 8.0;
+      if (y > plateauLevel) {
+          y = plateauLevel + (y - plateauLevel) * 0.1; // Soft cap
+      }
+  }
+
+  // 6. Coastal Logic
+  if (params.coastal) {
+      // Create a flat sea level
+      const seaLevel = params.baseHeight;
+      if (y < seaLevel + 2.0) {
+          // Flatten as it approaches sea level
+          y = seaLevel + Math.max(0, y - seaLevel) * 0.5;
+      }
+      if (y < seaLevel) {
+           y = seaLevel; // Absolute flat water/sand bed
+      }
+  }
 
 
   // --- Path Flattening Logic ---
@@ -136,9 +161,29 @@ export const getTerrainHeight = (x, z) => {
   // We want the path to follow the terrain but be smoother.
   // Sample the "wild" noise at the path center (pathX), but dampen high frequencies.
   // We use a separate, smoother noise function for the path base.
-  const pathBaseHeight = fbm(pathX, z, 2, 0.5, 2.0, 0.005) * 12.0 * (1 - ridgeMask) +
-                         ridgedNoise(pathX, z, 2, 0.5, 2.0, 0.01) * 6.0 * ridgeMask;
+  let pathBaseHeight = fbm(pathX, z, 2, 0.5, 2.0, 0.005) * 12.0 * params.roughness * (1 - ridgeMask) +
+                         ridgedNoise(pathX, z, 2, 0.5, 2.0, 0.01) * 6.0 * params.roughness * ridgeMask;
                          // Note: mirroring the main terrain mix logic roughly, but with fewer octaves
+
+  pathBaseHeight += params.baseHeight;
+
+  // Apply Plateau and Coastal logic to path as well
+  if (params.plateau) {
+      const plateauLevel = params.baseHeight + 8.0;
+      if (pathBaseHeight > plateauLevel) {
+          pathBaseHeight = plateauLevel + (pathBaseHeight - plateauLevel) * 0.1;
+      }
+  }
+
+  if (params.coastal) {
+      const seaLevel = params.baseHeight;
+      if (pathBaseHeight < seaLevel + 2.0) {
+          pathBaseHeight = seaLevel + Math.max(0, pathBaseHeight - seaLevel) * 0.5;
+      }
+      if (pathBaseHeight < seaLevel) {
+           pathBaseHeight = seaLevel;
+      }
+  }
 
   // Add subtle camber/irregularity to path surface
   const pathCamber = noise2D(x * 0.5, z * 0.5) * 0.15;
@@ -156,12 +201,12 @@ export const getTerrainHeight = (x, z) => {
  * Calculates the terrain normal at a given (x, z) coordinate.
  * Used for aligning objects (like the path) to the ground slope.
  */
-export const getTerrainNormal = (x, z) => {
+export const getTerrainNormal = (x, z, params = { roughness: 1.0, plateau: false, coastal: false, baseHeight: 0.0 }) => {
   const eps = 0.1;
-  const hL = getTerrainHeight(x - eps, z);
-  const hR = getTerrainHeight(x + eps, z);
-  const hD = getTerrainHeight(x, z - eps);
-  const hU = getTerrainHeight(x, z + eps);
+  const hL = getTerrainHeight(x - eps, z, params);
+  const hR = getTerrainHeight(x + eps, z, params);
+  const hD = getTerrainHeight(x, z - eps, params);
+  const hU = getTerrainHeight(x, z + eps, params);
 
   // Vector along X axis
   const v1 = new Vector3(2 * eps, hR - hL, 0);
@@ -177,9 +222,9 @@ export const getTerrainNormal = (x, z) => {
  * Calculates the minimum terrain height within a radius.
  * Used for grounding objects so they don't float.
  */
-export const getMinTerrainHeight = (x, z, radius) => {
+export const getMinTerrainHeight = (x, z, radius, params = { roughness: 1.0, plateau: false, coastal: false, baseHeight: 0.0 }) => {
     // Check center and 4 cardinal points
-    let minH = getTerrainHeight(x, z);
+    let minH = getTerrainHeight(x, z, params);
 
     const offsets = [
         [radius, 0],
@@ -189,7 +234,7 @@ export const getMinTerrainHeight = (x, z, radius) => {
     ];
 
     for (const [dx, dz] of offsets) {
-        const h = getTerrainHeight(x + dx, z + dz);
+        const h = getTerrainHeight(x + dx, z + dz, params);
         if (h < minH) minH = h;
     }
 

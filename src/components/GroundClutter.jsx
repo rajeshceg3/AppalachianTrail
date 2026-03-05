@@ -57,7 +57,7 @@ const GroundClutter = ({ region }) => {
       const dist = 1.5 + (rng() * rng()) * 12.0;
       const x = pathX + side * dist;
 
-      const y = getTerrainHeight(x, z);
+      const y = getTerrainHeight(x, z, region.terrainParams);
 
       const n = noise2D(x * 0.05, z * 0.05);
       if (n < -0.1) continue;
@@ -88,7 +88,7 @@ const GroundClutter = ({ region }) => {
       const offset = (rng() - 0.5) * 5.0;
       const x = pathX + offset;
 
-      const y = getTerrainHeight(x, z);
+      const y = getTerrainHeight(x, z, region.terrainParams);
 
       const scale = 0.05 + rng() * 0.15;
       const rotation = [rng() * Math.PI, rng() * Math.PI, rng() * Math.PI];

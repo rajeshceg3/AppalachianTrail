@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { getPathX, getTerrainHeight, getTerrainNormal, noise2D } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap, generateAlphaMap } from '../utils/textureGenerator';
 
-const Path = ({ color }) => {
+const Path = ({ color, region }) => {
   const { roughnessMap, normalMap, alphaMap } = useMemo(() => {
     // Generate textures for path
 
@@ -43,7 +43,7 @@ const Path = ({ color }) => {
       const x = getPathX(z);
       // Lift slightly above terrain to avoid z-fighting
       // Reduced offset significantly because we use polygonOffset in material
-      const y = getTerrainHeight(x, z) + 0.005;
+      const y = getTerrainHeight(x, z, region?.terrainParams) + 0.005;
       points.push(new THREE.Vector3(x, y, z));
     }
     return new THREE.CatmullRomCurve3(points);
@@ -89,8 +89,8 @@ const Path = ({ color }) => {
 
         // Snap to terrain height to prevent floating/clipping
         // We use the calculated X/Z but sample the exact ground height
-        const leftY = getTerrainHeight(left.x, left.z) + 0.02;
-        const rightY = getTerrainHeight(right.x, right.z) + 0.02;
+        const leftY = getTerrainHeight(left.x, left.z, region?.terrainParams) + 0.02;
+        const rightY = getTerrainHeight(right.x, right.z, region?.terrainParams) + 0.02;
 
         vertices.push(left.x, leftY, left.z);
         vertices.push(right.x, rightY, right.z);
