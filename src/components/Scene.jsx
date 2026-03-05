@@ -331,7 +331,7 @@ const Scene = ({ region, audioEnabled }) => {
         <meshBasicMaterial color="#fff7ed" />
       </mesh>
 
-      <EffectComposer disableNormalPass>
+      <EffectComposer disableNormalPass multisampling={0}>
         <DepthOfField
             ref={dofRef}
             focusDistance={0.02} /* Fallback/Initial */

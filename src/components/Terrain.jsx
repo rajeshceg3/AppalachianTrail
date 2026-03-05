@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { getTerrainHeight, getPathX, noise2D } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
 
-const terrainArgs = [1200, 1200, 512, 512]; // Reduced segments for better generation & culling performance
+const terrainArgs = [1200, 1200, 256, 256]; // Reduced segments for better generation & culling performance
 
 const Terrain = forwardRef(({ color }, ref) => {
   const meshRef = useRef();
@@ -12,12 +12,12 @@ const Terrain = forwardRef(({ color }, ref) => {
 
   const { roughnessMap, normalMap } = useMemo(() => {
     // Higher resolution and scale to reduce visible tiling pattern
-    const rMap = generateHeightMap(1024, 1024, 8.0, 4);
+    const rMap = generateHeightMap(512, 512, 8.0, 4);
     rMap.wrapS = THREE.RepeatWrapping;
     rMap.wrapT = THREE.RepeatWrapping;
     rMap.repeat.set(8, 8);
 
-    const nMap = generateNormalMap(1024, 1024, 8.0, 4, 1.0, rMap.userData.imageData);
+    const nMap = generateNormalMap(512, 512, 8.0, 4, 1.0, rMap.userData.imageData);
     nMap.wrapS = THREE.RepeatWrapping;
     nMap.wrapT = THREE.RepeatWrapping;
     nMap.repeat.set(8, 8);
