@@ -3,7 +3,7 @@ import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
 
-const Controls = ({ audioRef }) => {
+const Controls = ({ audioRef, region }) => {
   const { camera } = useThree();
   const moveForward = useRef(false);
   const moveBackward = useRef(false);
@@ -207,8 +207,8 @@ const Controls = ({ audioRef }) => {
         dirVec.current.copy(targetVelocityVec.current).normalize();
         const lookAhead = 1.0;
         nextPosVec.current.copy(camera.position).add(dirVec.current.multiplyScalar(lookAhead));
-        const currH = getTerrainHeight(camera.position.x, camera.position.z);
-        const nextH = getTerrainHeight(nextPosVec.current.x, nextPosVec.current.z);
+        const currH = getTerrainHeight(camera.position.x, camera.position.z, region?.terrainParams);
+        const nextH = getTerrainHeight(nextPosVec.current.x, nextPosVec.current.z, region?.terrainParams);
         currentSlope = (nextH - currH) / lookAhead;
 
         // Uphill (slope > 0): Slower
@@ -342,7 +342,7 @@ const Controls = ({ audioRef }) => {
     const bobAmount = Math.sin(bobRef.current) * 0.05;
 
     // Terrain following
-    const groundHeight = getTerrainHeight(camera.position.x, camera.position.z);
+    const groundHeight = getTerrainHeight(camera.position.x, camera.position.z, region?.terrainParams);
 
     // Camera height is ground + eye height + bob + breath + landing thud
     // Smoothly adjust to ground changes

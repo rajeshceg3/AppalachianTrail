@@ -14,17 +14,18 @@ const hashCode = (s) => {
 }
 
 const Rocks = ({ region }) => {
-  // More rocks in rocky regions (Maine, New England)
-  const isRocky = region.id === 'maine' || region.id === 'new-england';
-  // Increased counts for larger terrain
-  const rockCount = isRocky ? 4000 : 1200;
+  const geoParams = region.geologyParams || { rockCount: 1.0, hasMinerals: false };
+  const baseRockCount = 1200;
+  const rockCount = Math.floor(baseRockCount * geoParams.rockCount);
   const pebbleCount = rockCount * 3; // More pebbles
+  const mineralCount = geoParams.hasMinerals ? 200 : 0;
 
-  const { rocks, pebbles } = useMemo(() => {
+  const { rocks, pebbles, minerals } = useMemo(() => {
     const rocks = [];
     const pebbles = [];
+    const minerals = [];
     let attempts = 0;
-    const maxAttempts = (rockCount + pebbleCount) * 10;
+    const maxAttempts = (rockCount + pebbleCount + mineralCount) * 10;
 
     // Create a seeded RNG based on region ID (offset by 1 to differ from trees)
     const seed = hashCode(region.id || 'default') + 1;
@@ -64,7 +65,7 @@ const Rocks = ({ region }) => {
       // Grounding: Sample minimum height within the rock's footprint
       // Rock radius is approx 1.0 * scale[0] (icosahedron radius 1)
       const radius = scale[0];
-      const minH = getMinTerrainHeight(x, z, radius);
+      const minH = getMinTerrainHeight(x, z, radius, region.terrainParams);
 
       const rotation = [
         rng() * Math.PI * 2,
@@ -102,7 +103,7 @@ const Rocks = ({ region }) => {
 
         if (rng() > finalProb) continue;
 
-        const y = getTerrainHeight(x, z);
+        const y = getTerrainHeight(x, z, region.terrainParams);
         const baseScale = 0.05 + rng() * 0.15; // Small
         const scale = [
             baseScale * (0.8 + rng() * 0.4),
@@ -116,8 +117,48 @@ const Rocks = ({ region }) => {
         pebbles.push({ position: [x, yPos, z], scale, rotation });
     }
 
-    return { rocks, pebbles };
-  }, [region.id, rockCount, pebbleCount]);
+    // Generate Minerals
+    attempts = 0;
+    while (minerals.length < mineralCount && attempts < maxAttempts) {
+        attempts++;
+        const z = (rng() - 0.5) * 1200;
+        const x = (rng() - 0.5) * 1200;
+
+        const noiseVal = noise2D(x * 0.2, z * 0.2); // Tighter clusters for crystals
+        const noiseProb = THREE.MathUtils.smoothstep(-0.2, 0.4, noiseVal);
+
+        const pathX = getPathX(z);
+        const dist = Math.abs(x - pathX);
+        const pathProb = THREE.MathUtils.smoothstep(1.5, 5.0, dist); // Can be closer to path
+
+        const finalProb = noiseProb * pathProb;
+
+        if (rng() > finalProb) continue;
+
+        const baseScale = 0.2 + rng() * 0.4;
+        const scale = [
+            baseScale * (0.8 + rng() * 0.4),
+            baseScale * (2.0 + rng() * 2.0), // Taller crystals
+            baseScale * (0.8 + rng() * 0.4)
+        ];
+
+        const radius = scale[0];
+        const minH = getMinTerrainHeight(x, z, radius, region.terrainParams);
+
+        // Pointing generally up
+        const rotation = [
+            (rng() - 0.5) * 0.4,
+            rng() * Math.PI * 2,
+            (rng() - 0.5) * 0.4
+        ];
+
+        const yPos = minH - (0.1 * scale[1]); // Sit mostly on top, slightly buried
+
+        minerals.push({ position: [x, yPos, z], scale, rotation });
+    }
+
+    return { rocks, pebbles, minerals };
+  }, [region.id, rockCount, pebbleCount, mineralCount, region.terrainParams]);
 
   const { roughnessMap, normalMap } = useMemo(() => {
     const rMap = generateHeightMap(256, 256, 4.0, 4);
@@ -181,6 +222,28 @@ const Rocks = ({ region }) => {
               />
           ))}
         </Instances>
+
+        {/* Minerals / Crystals */}
+        {mineralCount > 0 && (
+          <Instances range={mineralCount}>
+            <octahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial
+                color="#00ffff"
+                emissive="#00ffff"
+                emissiveIntensity={2.0}
+                roughness={0.2}
+                metalness={0.8}
+            />
+            {minerals.map((d, i) => (
+                <Instance
+                key={`min-${i}`}
+                position={d.position}
+                scale={d.scale}
+                rotation={d.rotation}
+                />
+            ))}
+          </Instances>
+        )}
     </>
   );
 };

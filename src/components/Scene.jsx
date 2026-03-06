@@ -280,7 +280,7 @@ const Scene = ({ region, audioEnabled }) => {
   return (
     <>
       <AudioController ref={audioRef} region={region} enabled={audioEnabled} windRef={windRef} />
-      <Controls audioRef={audioRef} />
+      <Controls audioRef={audioRef} region={region} />
       <fogExp2 ref={fogRef} attach="fog" args={[region.fogColor, region.fogDensity]} />
       <SoftShadows size={25} samples={10} focus={0.5} />
 
@@ -298,8 +298,8 @@ const Scene = ({ region, audioEnabled }) => {
         <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50, 0.5, 100]} />
       </directionalLight>
 
-      <Terrain ref={terrainRef} color={region.groundColor} />
-      <Path color={region.pathColor || '#8b7355'} />
+      <Terrain ref={terrainRef} color={region.groundColor} region={region} />
+      <Path color={region.pathColor || '#8b7355'} region={region} />
 
       <Vegetation region={region} />
       <Rocks region={region} />

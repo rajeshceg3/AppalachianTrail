@@ -5,7 +5,7 @@ import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator'
 
 const terrainArgs = [1200, 1200, 256, 256]; // Reduced segments for better generation & culling performance
 
-const Terrain = forwardRef(({ color }, ref) => {
+const Terrain = forwardRef(({ color, region }, ref) => {
   const meshRef = useRef();
 
   useImperativeHandle(ref, () => meshRef.current);
@@ -50,7 +50,7 @@ const Terrain = forwardRef(({ color }, ref) => {
       const y = positions.getY(i); // Corresponds to -Z in world space due to rotation
 
       // Calculate height at World (x, z). World Z = -y.
-      const height = getTerrainHeight(x, -y);
+      const height = getTerrainHeight(x, -y, region?.terrainParams);
       positions.setZ(i, height);
     }
 
@@ -73,6 +73,11 @@ const Terrain = forwardRef(({ color }, ref) => {
     const darkRock = new THREE.Color('#2a2a2a'); // Dark grey/brown for cliffs
     const highPeak = new THREE.Color('#e2e8f0'); // Lighter/snowy for peaks (Slate-200)
     const dirtColor = new THREE.Color('#5d5040'); // Dirt/gravel for path edges
+    const sandColor = new THREE.Color('#fcd34d'); // Sand/Beach for coastal
+    const plateauDustColor = new THREE.Color('#c2410c'); // Red dust for plateau edges
+
+    const terrainParams = region?.terrainParams || {};
+    const baseHeight = terrainParams.baseHeight || 0;
 
     for (let i = 0; i < count; i++) {
       const x = positions.getX(i);
@@ -112,6 +117,20 @@ const Terrain = forwardRef(({ color }, ref) => {
       const peakFactor = THREE.MathUtils.smoothstep(35, 60, h);
       c.lerp(highPeak, peakFactor * 0.4);
 
+      // Coastal sand blending
+      if (terrainParams.coastal) {
+          const sandFactor = 1.0 - THREE.MathUtils.smoothstep(baseHeight, baseHeight + 3.0, h);
+          c.lerp(sandColor, sandFactor);
+      }
+
+      // Plateau edge blending (dusty red on steep parts near top)
+      if (terrainParams.plateau) {
+          const plateauLevel = baseHeight + 8.0;
+          if (h > plateauLevel - 4.0 && h <= plateauLevel) {
+               c.lerp(plateauDustColor, rockFactor * 0.6);
+          }
+      }
+
       // --- Noise Texturing ---
       // Low frequency noise for large scale variation
       const lfN = noise2D(x * 0.005, -y * 0.005);
@@ -132,7 +151,7 @@ const Terrain = forwardRef(({ color }, ref) => {
     geometry.computeBoundingBox();
     geometry.computeBoundingSphere();
 
-  }, [baseColor]); // Re-run when region color changes
+  }, [baseColor, region]); // Re-run when region changes
 
   return (
     <mesh
