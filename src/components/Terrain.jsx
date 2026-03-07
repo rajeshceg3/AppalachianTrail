@@ -75,6 +75,8 @@ const Terrain = forwardRef(({ color, region }, ref) => {
     const dirtColor = new THREE.Color('#5d5040'); // Dirt/gravel for path edges
     const sandColor = new THREE.Color('#fcd34d'); // Sand/Beach for coastal
     const plateauDustColor = new THREE.Color('#c2410c'); // Red dust for plateau edges
+    const snowColor = new THREE.Color('#ffffff'); // Pure snow
+    const screeColor = new THREE.Color('#8b8580'); // Loose scree rock
 
     const terrainParams = region?.terrainParams || {};
     const baseHeight = terrainParams.baseHeight || 0;
@@ -116,6 +118,22 @@ const Terrain = forwardRef(({ color, region }, ref) => {
       // Lighten peaks
       const peakFactor = THREE.MathUtils.smoothstep(35, 60, h);
       c.lerp(highPeak, peakFactor * 0.4);
+
+      // Snow line and scree slope features for Mountain locations
+      if (region?.id === 'maine') {
+          // Scree slope (loose rocks on steep edges at medium-high altitudes)
+          if (slope < 0.7 && h > 30) {
+               const screeFactor = 1.0 - THREE.MathUtils.smoothstep(0.4, 0.7, slope);
+               c.lerp(screeColor, screeFactor * 0.9);
+          }
+
+          // Snow line (snow accumulation at highest peaks, modulated by noise)
+          const snowThreshold = 45 + n * 3.0;
+          if (h > snowThreshold) {
+               const snowFactor = THREE.MathUtils.smoothstep(snowThreshold, snowThreshold + 10, h);
+               c.lerp(snowColor, snowFactor * 0.95);
+          }
+      }
 
       // Coastal sand blending
       if (terrainParams.coastal) {
