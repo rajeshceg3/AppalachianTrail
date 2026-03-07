@@ -17,7 +17,7 @@ export const regions = [
     windIntensity: 0.8,
     birdActivity: 0.1,
     waterProbability: 0.0,
-    terrainParams: { roughness: 1.5, plateau: true, coastal: false, baseHeight: -5.0 },
+    terrainParams: { roughness: 1.5, plateau: true, coastal: false, baseHeight: -5.0, dunes: true },
     vegetationParams: { density: 0.1, coniferRatio: 0.0 },
     geologyParams: { rockCount: 2.0, hasMinerals: true }
   },
@@ -39,7 +39,7 @@ export const regions = [
     windIntensity: 0.3,
     birdActivity: 0.8,
     waterProbability: 0.1,
-    terrainParams: { roughness: 0.2, plateau: false, coastal: false, baseHeight: -2.0 },
+    terrainParams: { roughness: 0.2, plateau: false, coastal: false, baseHeight: -2.0, urbanRuins: true },
     vegetationParams: { density: 0.3, coniferRatio: 0.1 },
     geologyParams: { rockCount: 1.5, hasMinerals: false }
   },
@@ -83,7 +83,7 @@ export const regions = [
     windIntensity: 0.2,
     birdActivity: 0.4,
     waterProbability: 0.7,
-    terrainParams: { roughness: 0.5, plateau: false, coastal: false, baseHeight: 0.0 },
+    terrainParams: { roughness: 0.5, plateau: false, coastal: false, baseHeight: 0.0, magicMounds: true },
     vegetationParams: { density: 1.5, coniferRatio: 0.5 },
     geologyParams: { rockCount: 0.8, hasMinerals: true }
   },
@@ -105,7 +105,7 @@ export const regions = [
     windIntensity: 0.9,
     birdActivity: 0.0,
     waterProbability: 0.0,
-    terrainParams: { roughness: 1.2, plateau: false, coastal: false, baseHeight: 2.0 },
+    terrainParams: { roughness: 1.2, plateau: false, coastal: false, baseHeight: 2.0, craters: true },
     vegetationParams: { density: 0.2, coniferRatio: 1.0 },
     geologyParams: { rockCount: 2.5, hasMinerals: false }
   },

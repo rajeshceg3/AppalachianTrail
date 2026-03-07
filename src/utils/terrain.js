@@ -139,6 +139,43 @@ export const getTerrainHeight = (x, z, params = { roughness: 1.0, plateau: false
       }
   }
 
+  // 7. Sand Dunes Logic
+  if (params.dunes) {
+      // Smooth directional sine waves mixed with noise for dunes
+      const duneNoise = noise2D(x * 0.01, z * 0.01) * 2.0;
+      y += (Math.sin(x * 0.05 + z * 0.02) * 4.0) + duneNoise;
+  }
+
+  // 8. Urban Ruins Logic
+  if (params.urbanRuins) {
+      // Smooth, subtle bumps to simulate overgrown foundations
+      const foundationNoise = noise2D(x * 0.1, z * 0.1);
+      const bump = Math.sin(x * 0.1) * Math.sin(z * 0.1);
+      // Only bump up occasionally
+      if (bump > 0.5) {
+          y += (bump - 0.5) * 2.0 + foundationNoise * 0.5;
+      }
+  }
+
+  // 9. Craters Logic
+  if (params.craters) {
+      // Occasional smooth dips
+      const craterNoise = noise2D(x * 0.05, z * 0.05);
+      const dip = Math.sin(x * 0.03) * Math.sin(z * 0.03);
+      if (dip > 0.6) {
+          y -= (dip - 0.6) * 10.0 + craterNoise;
+      }
+  }
+
+  // 10. Magic Mounds Logic
+  if (params.magicMounds) {
+      // Smooth, bulbous hills
+      const moundNoise = noise2D(x * 0.02, z * 0.02);
+      if (moundNoise > 0.2) {
+          y += (moundNoise - 0.2) * 15.0;
+      }
+  }
+
 
   // --- Path Flattening Logic ---
 
@@ -182,6 +219,34 @@ export const getTerrainHeight = (x, z, params = { roughness: 1.0, plateau: false
       }
       if (pathBaseHeight < seaLevel) {
            pathBaseHeight = seaLevel;
+      }
+  }
+
+  if (params.dunes) {
+      const duneNoise = noise2D(pathX * 0.01, z * 0.01) * 2.0;
+      pathBaseHeight += (Math.sin(pathX * 0.05 + z * 0.02) * 4.0) + duneNoise;
+  }
+
+  if (params.urbanRuins) {
+      const foundationNoise = noise2D(pathX * 0.1, z * 0.1);
+      const bump = Math.sin(pathX * 0.1) * Math.sin(z * 0.1);
+      if (bump > 0.5) {
+          pathBaseHeight += (bump - 0.5) * 2.0 + foundationNoise * 0.5;
+      }
+  }
+
+  if (params.craters) {
+      const craterNoise = noise2D(pathX * 0.05, z * 0.05);
+      const dip = Math.sin(pathX * 0.03) * Math.sin(z * 0.03);
+      if (dip > 0.6) {
+          pathBaseHeight -= (dip - 0.6) * 10.0 + craterNoise;
+      }
+  }
+
+  if (params.magicMounds) {
+      const moundNoise = noise2D(pathX * 0.02, z * 0.02);
+      if (moundNoise > 0.2) {
+          pathBaseHeight += (moundNoise - 0.2) * 15.0;
       }
   }
 
