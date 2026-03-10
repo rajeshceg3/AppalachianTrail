@@ -20,12 +20,19 @@ const Rocks = ({ region }) => {
   const pebbleCount = rockCount * 3; // More pebbles
   const mineralCount = geoParams.hasMinerals ? 200 : 0;
 
-  const { rocks, pebbles, minerals } = useMemo(() => {
+  const logCount = geoParams.hasLogs ? 150 : 0;
+  const driftwoodCount = geoParams.hasDriftwood ? 150 : 0;
+  const debrisCount = geoParams.hasDebris ? 250 : 0;
+
+  const { rocks, pebbles, minerals, logs, driftwood, debris } = useMemo(() => {
     const rocks = [];
     const pebbles = [];
     const minerals = [];
+    const logs = [];
+    const driftwood = [];
+    const debris = [];
     let attempts = 0;
-    const maxAttempts = (rockCount + pebbleCount + mineralCount) * 10;
+    const maxAttempts = (rockCount + pebbleCount + mineralCount + logCount + driftwoodCount + debrisCount) * 10;
 
     // Create a seeded RNG based on region ID (offset by 1 to differ from trees)
     const seed = hashCode(region.id || 'default') + 1;
@@ -157,8 +164,99 @@ const Rocks = ({ region }) => {
         minerals.push({ position: [x, yPos, z], scale, rotation });
     }
 
-    return { rocks, pebbles, minerals };
-  }, [region.id, rockCount, pebbleCount, mineralCount, region.terrainParams]);
+    // Generate Logs
+    attempts = 0;
+    while (logs.length < logCount && attempts < maxAttempts) {
+        attempts++;
+        const z = (rng() - 0.5) * 1200;
+        const x = (rng() - 0.5) * 1200;
+
+        const pathX = getPathX(z);
+        const dist = Math.abs(x - pathX);
+        if (dist < 4.0) continue; // Keep clear of path
+
+        const baseScale = 0.5 + rng() * 1.0;
+        const scale = [
+            baseScale * 0.4,
+            baseScale * (2.0 + rng() * 3.0), // Length
+            baseScale * 0.4
+        ];
+
+        const radius = scale[0];
+        const minH = getMinTerrainHeight(x, z, radius, region.terrainParams);
+        const yPos = minH + (scale[0] * 0.5); // Lying on the ground
+
+        const rotation = [
+            Math.PI / 2 + (rng() - 0.5) * 0.4, // Mostly flat
+            rng() * Math.PI * 2,
+            (rng() - 0.5) * 0.4
+        ];
+
+        logs.push({ position: [x, yPos, z], scale, rotation });
+    }
+
+    // Generate Driftwood
+    attempts = 0;
+    while (driftwood.length < driftwoodCount && attempts < maxAttempts) {
+        attempts++;
+        const z = (rng() - 0.5) * 1200;
+        const x = (rng() - 0.5) * 1200;
+
+        const y = getTerrainHeight(x, z, region.terrainParams);
+        const seaLevel = region.terrainParams.baseHeight || 0;
+        // Driftwood mostly near the shore
+        if (y > seaLevel + 3.0 || y < seaLevel - 1.0) continue;
+
+        const pathX = getPathX(z);
+        const dist = Math.abs(x - pathX);
+        if (dist < 3.0) continue;
+
+        const baseScale = 0.4 + rng() * 0.8;
+        const scale = [
+            baseScale * 0.3,
+            baseScale * (1.5 + rng() * 2.0),
+            baseScale * 0.3
+        ];
+
+        const yPos = y + (scale[0] * 0.4);
+
+        const rotation = [
+            Math.PI / 2 + (rng() - 0.5) * 0.3,
+            rng() * Math.PI * 2,
+            (rng() - 0.5) * 0.3
+        ];
+
+        driftwood.push({ position: [x, yPos, z], scale, rotation });
+    }
+
+    // Generate Debris (concrete chunks, rebar, etc)
+    attempts = 0;
+    while (debris.length < debrisCount && attempts < maxAttempts) {
+        attempts++;
+        const z = (rng() - 0.5) * 1200;
+        const x = (rng() - 0.5) * 1200;
+
+        const pathX = getPathX(z);
+        const dist = Math.abs(x - pathX);
+        if (dist < 2.0) continue;
+
+        const baseScale = 0.3 + rng() * 1.5;
+        const scale = [
+            baseScale * (0.5 + rng() * 0.8),
+            baseScale * (0.5 + rng() * 0.8),
+            baseScale * (0.5 + rng() * 0.8)
+        ];
+
+        const minH = getMinTerrainHeight(x, z, scale[0], region.terrainParams);
+        const yPos = minH - (0.2 * scale[1]); // Slightly buried
+
+        const rotation = [rng() * 6, rng() * 6, rng() * 6];
+
+        debris.push({ position: [x, yPos, z], scale, rotation });
+    }
+
+    return { rocks, pebbles, minerals, logs, driftwood, debris };
+  }, [region.id, rockCount, pebbleCount, mineralCount, logCount, driftwoodCount, debrisCount, region.terrainParams]);
 
   const { roughnessMap, normalMap } = useMemo(() => {
     const rMap = generateHeightMap(256, 256, 4.0, 4);
@@ -237,6 +335,63 @@ const Rocks = ({ region }) => {
             {minerals.map((d, i) => (
                 <Instance
                 key={`min-${i}`}
+                position={d.position}
+                scale={d.scale}
+                rotation={d.rotation}
+                />
+            ))}
+          </Instances>
+        )}
+
+        {/* Logs */}
+        {logCount > 0 && (
+          <Instances range={logCount}>
+            <cylinderGeometry args={[1, 1, 1, 7]} />
+            <meshStandardMaterial
+                color="#4a3b2c"
+                roughness={0.9}
+            />
+            {logs.map((d, i) => (
+                <Instance
+                key={`log-${i}`}
+                position={d.position}
+                scale={d.scale}
+                rotation={d.rotation}
+                />
+            ))}
+          </Instances>
+        )}
+
+        {/* Driftwood */}
+        {driftwoodCount > 0 && (
+          <Instances range={driftwoodCount}>
+            <cylinderGeometry args={[1, 0.7, 1, 6]} />
+            <meshStandardMaterial
+                color="#b5aead"
+                roughness={0.8}
+            />
+            {driftwood.map((d, i) => (
+                <Instance
+                key={`drift-${i}`}
+                position={d.position}
+                scale={d.scale}
+                rotation={d.rotation}
+                />
+            ))}
+          </Instances>
+        )}
+
+        {/* Debris */}
+        {debrisCount > 0 && (
+          <Instances range={debrisCount}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial
+                color="#595959"
+                roughness={0.7}
+            />
+            {debris.map((d, i) => (
+                <Instance
+                key={`deb-${i}`}
                 position={d.position}
                 scale={d.scale}
                 rotation={d.rotation}

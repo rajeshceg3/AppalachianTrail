@@ -19,7 +19,7 @@ export const regions = [
     waterProbability: 0.0,
     terrainParams: { roughness: 1.5, plateau: true, coastal: false, baseHeight: -5.0, dunes: true },
     vegetationParams: { density: 0.1, coniferRatio: 0.0 },
-    geologyParams: { rockCount: 2.0, hasMinerals: true }
+    geologyParams: { rockCount: 2.0, hasMinerals: true, hasLogs: false, hasDriftwood: false, hasDebris: false }
   },
   {
     id: 'nyc',
@@ -41,7 +41,7 @@ export const regions = [
     waterProbability: 0.1,
     terrainParams: { roughness: 0.2, plateau: false, coastal: false, baseHeight: -2.0, urbanRuins: true },
     vegetationParams: { density: 0.3, coniferRatio: 0.1 },
-    geologyParams: { rockCount: 1.5, hasMinerals: false }
+    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true }
   },
   {
     id: 'acadia',
@@ -63,7 +63,7 @@ export const regions = [
     waterProbability: 1.0,
     terrainParams: { roughness: 0.8, plateau: false, coastal: true, baseHeight: -10.0 },
     vegetationParams: { density: 0.8, coniferRatio: 0.9 },
-    geologyParams: { rockCount: 1.8, hasMinerals: false }
+    geologyParams: { rockCount: 1.8, hasMinerals: false, hasLogs: false, hasDriftwood: true, hasDebris: false }
   },
   {
     id: 'feywood',
@@ -85,7 +85,7 @@ export const regions = [
     waterProbability: 0.7,
     terrainParams: { roughness: 0.5, plateau: false, coastal: false, baseHeight: 0.0, magicMounds: true },
     vegetationParams: { density: 1.5, coniferRatio: 0.5 },
-    geologyParams: { rockCount: 0.8, hasMinerals: true }
+    geologyParams: { rockCount: 0.8, hasMinerals: true, hasLogs: true, hasDriftwood: false, hasDebris: false }
   },
   {
     id: 'wasteland',
@@ -107,7 +107,7 @@ export const regions = [
     waterProbability: 0.0,
     terrainParams: { roughness: 1.2, plateau: false, coastal: false, baseHeight: 2.0, craters: true },
     vegetationParams: { density: 0.2, coniferRatio: 1.0 },
-    geologyParams: { rockCount: 2.5, hasMinerals: false }
+    geologyParams: { rockCount: 2.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true }
   },
   {
     id: 'georgia',
@@ -129,7 +129,7 @@ export const regions = [
     waterProbability: 0.5,
     terrainParams: { roughness: 1.0, plateau: false, coastal: false, baseHeight: 0.0 },
     vegetationParams: { density: 1.0, coniferRatio: 0.7 },
-    geologyParams: { rockCount: 1.0, hasMinerals: false }
+    geologyParams: { rockCount: 1.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   },
   {
     id: 'smokies',
@@ -151,7 +151,7 @@ export const regions = [
     waterProbability: 0.8,
     terrainParams: { roughness: 1.1, plateau: false, coastal: false, baseHeight: 5.0 },
     vegetationParams: { density: 1.2, coniferRatio: 0.8 },
-    geologyParams: { rockCount: 1.1, hasMinerals: false }
+    geologyParams: { rockCount: 1.1, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   },
   {
     id: 'virginia',
@@ -173,7 +173,7 @@ export const regions = [
     waterProbability: 0.4,
     terrainParams: { roughness: 0.9, plateau: false, coastal: false, baseHeight: 2.0 },
     vegetationParams: { density: 1.1, coniferRatio: 0.6 },
-    geologyParams: { rockCount: 0.9, hasMinerals: false }
+    geologyParams: { rockCount: 0.9, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   },
   {
     id: 'mid-atlantic',
@@ -195,7 +195,7 @@ export const regions = [
     waterProbability: 0.2,
     terrainParams: { roughness: 1.0, plateau: false, coastal: false, baseHeight: 0.0 },
     vegetationParams: { density: 1.0, coniferRatio: 0.5 },
-    geologyParams: { rockCount: 1.0, hasMinerals: false }
+    geologyParams: { rockCount: 1.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   },
   {
     id: 'new-england',
@@ -217,7 +217,7 @@ export const regions = [
     waterProbability: 0.6,
     terrainParams: { roughness: 1.3, plateau: false, coastal: false, baseHeight: 8.0 },
     vegetationParams: { density: 0.9, coniferRatio: 0.9 },
-    geologyParams: { rockCount: 1.5, hasMinerals: false }
+    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   },
   {
     id: 'maine',
@@ -239,6 +239,6 @@ export const regions = [
     waterProbability: 0.9,
     terrainParams: { roughness: 1.5, plateau: false, coastal: false, baseHeight: 12.0 },
     vegetationParams: { density: 0.8, coniferRatio: 1.0 },
-    geologyParams: { rockCount: 2.0, hasMinerals: false }
+    geologyParams: { rockCount: 2.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   }
 ];
