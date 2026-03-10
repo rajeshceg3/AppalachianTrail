@@ -305,6 +305,14 @@ const Scene = ({ region, audioEnabled }) => {
       <Rocks region={region} />
       <GroundClutter region={region} />
 
+      {/* Water Plane for Coastal Regions */}
+      {region.terrainParams?.coastal && (
+        <mesh position={[0, region.terrainParams.baseHeight, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[1200, 1200, 1, 1]} />
+          <meshStandardMaterial color="#023e8a" roughness={0.1} metalness={0.8} transparent opacity={0.8} />
+        </mesh>
+      )}
+
       {/* Atmospheric particles */}
       <AtmosphericParticles color={region.particles} type={region.particleType} />
       {/* Close-up "Macro" Particles for Parallax/Depth */}
