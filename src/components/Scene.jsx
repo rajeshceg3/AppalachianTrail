@@ -95,7 +95,9 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200,
         // We calculate 'dy' relative to camera height (camPos.y)
         let dy;
 
-        if (type === 'snow') {
+        if (type === 'heatShimmer') {
+             dy = (particle.y - 10) + Math.sin(time * 2.0 + particle.offset) * 1.5;
+        } else if (type === 'snow') {
              // Fast falling
              const fallSpeed = 3.0 * particle.speed;
              // Modulo 20 window centered on camera
@@ -141,6 +143,8 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200,
              scale *= (0.5 + Math.sin(time * 3 + particle.offset) * 0.5);
         } else if (type === 'mist') {
              scale *= 3.0; // Mist is larger
+        } else if (type === 'heatShimmer') {
+             scale *= 5.0; // Large, blurry particle
         }
 
         dummy.scale.setScalar(scale);
@@ -313,6 +317,22 @@ const Scene = ({ region, audioEnabled }) => {
         </mesh>
       )}
 
+      {/* Stream Water Mesh */}
+      {region.terrainParams?.stream && (
+        <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[1200, 1200, 1, 1]} />
+          <meshStandardMaterial color="#3b82f6" roughness={0.2} metalness={0.9} transparent opacity={0.6} />
+        </mesh>
+      )}
+
+      {/* Alpine Lake Water Mesh */}
+      {region.terrainParams?.alpineLake && (
+        <mesh position={[-40, -4, -40]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[50, 32]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.05} metalness={1.0} transparent opacity={0.9} />
+        </mesh>
+      )}
+
       {/* Atmospheric particles */}
       <AtmosphericParticles color={region.particles} type={region.particleType} />
       {/* Close-up "Macro" Particles for Parallax/Depth */}
@@ -332,6 +352,17 @@ const Scene = ({ region, audioEnabled }) => {
         speedMultiplier={4.0} // High speed for turbulent feel
         additive={true}
       />
+
+      {/* Heat Shimmer specific particle layer */}
+      {region.id === 'moab' && (
+        <AtmosphericParticles
+          color="#fcd34d"
+          type="heatShimmer"
+          count={500}
+          range={60}
+          speedMultiplier={0.5}
+        />
+      )}
 
       {/* Sun Mesh for GodRays */}
       <mesh ref={sunRef} position={[20, 30, 10]}>

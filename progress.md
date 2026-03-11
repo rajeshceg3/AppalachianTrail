@@ -4,69 +4,25 @@
 - Project initialized with React, Vite, Three.js (R3F), and Tailwind CSS.
 - Navigation flow: Landing -> Map -> Experience.
 - Map View: Interactive topographic-style map with all 6 regions selectable.
-  - **Refined Interaction**: Added soft glow effects and smooth transitions on hover.
-  - **UX Overhaul**: Redesigned as a vertical, scrolling "Path North" experience with SVG animations.
-  - **Bug Fix**: Fixed initial scroll position logic (`useLayoutEffect`) and removed container clipping to resolve invisible region issue.
 - Experience:
   - Dynamic 3D environment loading based on selected region.
   - "Walk" mechanic implemented (W/S keys + Drag to look).
-  - Head bobbing for grounded feel.
   - Distinct visual profiles for all 6 regions (colors, fog, trees).
-  - Loading transitions and region-specific text overlays.
 - Visual Polish:
   - **Organic Terrain**: Implemented seeded Simplex noise for consistent, rolling hills.
-  - **Grounded Vegetation**: Fixed floating trees by aligning object placement logic with terrain mesh generation.
-  - **Vegetation Animation**: Implemented foliage sway (CPU-based) for dynamic environment.
-  - **Atmosphere**:
-      - Tuned exponential fog and lighting for realistic depth.
-      - **Dynamic Environment**: Implemented "breathing" fog and pulsing sunlight for a living world feel.
-      - **Post-Processing**: Added Bloom and Vignette for cinematic, soft visuals.
-  - **Vegetation & Rocks**:
-      - Refactored `Scene.jsx` to use modular `Vegetation` and `Rocks` components.
-      - Added procedural rock scattering (Dodecahedron instances) grounded on terrain.
-      - Enhanced tree placement and scale variation.
-  - **Path Integration**: Winding path that follows terrain contours more naturally.
-  - **Content**: Updated region descriptors with poetic, evocative text as per PRD.
+  - **Atmosphere**: Tuned exponential fog and lighting for realistic depth.
+  - **Vegetation & Rocks**: Added procedural rock scattering, grounded on terrain.
 - **Audio Experience**: Procedural audio engine implemented (Web Audio API).
-  - Wind (dynamic intensity based on region).
-  - Birds (randomized chirps based on activity).
-  - Footsteps (filtered noise bursts triggered by movement).
-  - Mute/Unmute control for user accessibility.
 - **Mobile Controls**: Touch navigation support (Tap-to-walk, Drag-to-look).
-- **Enhanced Organic Feel**:
-  - Refined object placement logic (rejection sampling) to eliminate artificial linear boundaries near the path.
-  - Implemented multi-phase wind animation for vegetation to prevent synchronized swaying.
-  - Added complexity to path winding algorithm for more natural curvature.
-  - **Advanced Organic Detail**:
-    - Implemented multi-octave noise terrain for realistic hills and micro-detail.
-    - Replaced periodic sine waves with non-integer frequency path generation.
-    - Added noise-based clustering (groves) for vegetation and rocks.
-    - Implemented probabilistic path avoidance and log-normal scaling for natural variation.
-    - Added organic camera movement (banking, head bob, breathing).
-    - Added atmospheric particles with wind wrapping and vertical anchoring.
-- **Immersion Enhancements (Socratic Iteration)**:
-  - **Realistic Wind**: Replaced rigid vegetation rotation with a custom vertex shader (`WindShader.js`) for organic, height-based sway.
-  - **Spatial Audio**: Implemented height-based wind modulation (wind intensifies and filters open as camera ascends).
-  - **Textured Audio**: Enhanced footstep synthesis with layered gravel crunch (bandpass filtered noise).
-  - **Living Atmosphere**: Implemented dynamic sunlight warming (transition to golden hour) and noise-modulated fog density breathing.
-  - **Dynamic Particles**: Implemented `AtmosphericParticles` with distinct behaviors (`snow`, `leaves`, `fireflies`, `mist`) driven by region data.
-- **Naturalism Polish (Ultrathink Iteration)**:
-  - **Physics Camera**: Implemented realistic head-bob, breathing sway, and banking turns in `Controls.jsx`.
-  - **Organic Shaders**: Added `RockShader.js` with vertex displacement noise for non-uniform rock shapes.
-  - **FBM Path Textures**: Replaced linear path gradients with Fractal Brownian Motion noise for ragged, natural edges (`textureGenerator.js`).
-  - **Atmospheric Depth**: Added dynamic cloud shadows modulating light intensity and fog density in `Scene.jsx`.
-  - **Post-Processing**: Integrated Depth of Field with autofocus raycasting, Bloom, Vignette, and Film Grain.
-  - **Verification**: `verify_visuals_new.py` confirmed organic rendering without artificial artifacts.
-- **Immersion Update (Final Polish)**:
-  - **Scale**: Expanded terrain to 1200x1200 and increased vegetation/rock density (8000/4000) for a lush, dense environment.
-  - **Boundaries**: Implemented soft velocity damping and increased resistance to prevent world-edge visibility.
-  - **Atmosphere**: Increased fog density to mask horizon seamlessly.
-  - **Verification**: Validated visual density and naturalism with Playwright automation.
-- **Ultrathink Naturalism Refinement**:
-  - **Grounding Logic**: Implemented multi-point height sampling (`getMinTerrainHeight`) to prevent floating vegetation and rocks on steep slopes.
-  - **Path Modulation**: Modulated path width with 2D noise for organic, non-uniform trail shape.
-  - **Terrain Variation**: Added low-frequency noise layer to terrain vertex colors to eliminate tiling artifacts.
-  - **Verification**: Confirmed logic correctness with unit tests and visual checks.
+- **Enhanced Organic Feel**: Advanced noise-based clustering and FBM Path Textures.
+- **Immersion Enhancements (Socratic Iteration)**: Spatial Audio, Realistic Wind.
+- **Naturalism Polish (Ultrathink Iteration)**: Physics Camera, FBM Textures, Rock Shaders.
+- **Terrain Upgrade (Phase 4)**:
+  - **100% Complete**: Implemented new unique geological traits across all 11 defined regions in `src/data/regions.js`.
+  - Added dynamic parameters to `terrainParams`: `caves`, `pollution`, `saltMarsh`, `leyLines`, `radiation`, `stream`, `alpineLake`.
+  - Added `season` parameter to `vegetationParams` to cycle broadleaf foliage through spring, summer, autumn, and winter colors.
+  - Dynamic procedural generation logic integrated directly into `src/utils/terrain.js` (geometry) and `src/components/Terrain.jsx` (vertex coloring).
+  - Extended environment elements in `Scene.jsx` (heat shimmer particles, water meshes).
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Vite, Three.js, GSAP/Framer Motion, Tailwind).
@@ -89,6 +45,7 @@
 - [x] Final Density & Scale Expansion.
 - [x] Robust Grounding & Natural Variation.
 - [x] Fixed Map View scrolling bug.
+- [x] **Terrain Upgrade (Phase 4)**: 100% location specific unique features completed.
 
 ## Next Steps
 - Final deployment configuration (external).
