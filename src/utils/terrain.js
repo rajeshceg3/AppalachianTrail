@@ -176,6 +176,74 @@ export const getTerrainHeight = (x, z, params = { roughness: 1.0, plateau: false
       }
   }
 
+  // 11. Caves Logic (Sinkholes)
+  if (params.caves) {
+      const caveNoise = noise2D(x * 0.03, z * 0.03);
+      const sinkholeMask = Math.max(0, caveNoise - 0.6) * 2.5; // Only deeper dips
+      y -= sinkholeMask * 20.0;
+  }
+
+  // 12. Stream Logic
+  if (params.stream) {
+      // Create a meandering stream bed
+      const streamPathX = Math.sin(z * 0.02) * 30 + Math.sin(z * 0.05) * 10;
+      const distToStream = Math.abs(x - streamPathX);
+      const streamWidth = 8.0;
+      if (distToStream < streamWidth) {
+          const streamDip = Math.cos((distToStream / streamWidth) * (Math.PI / 2));
+          y -= streamDip * 4.0;
+      }
+  }
+
+  // 13. Alpine Lake Logic
+  if (params.alpineLake) {
+      // Localized large dip
+      const lakeCenter = { x: -40, z: -40 };
+      const distToLake = Math.sqrt(Math.pow(x - lakeCenter.x, 2) + Math.pow(z - lakeCenter.z, 2));
+      const lakeRadius = 50.0;
+      if (distToLake < lakeRadius) {
+          const lakeDip = Math.cos((distToLake / lakeRadius) * (Math.PI / 2));
+          y -= lakeDip * 8.0;
+      }
+  }
+
+  // 14. Salt Marsh Logic
+  if (params.saltMarsh) {
+      const seaLevel = params.baseHeight;
+      if (y < seaLevel + 3.0 && y > seaLevel - 1.0) {
+          // Plateau around sea level
+          y = seaLevel + (y - seaLevel) * 0.2;
+      }
+  }
+
+  // 15. Radiation Logic
+  if (params.radiation) {
+      const radNoise = noise2D(x * 0.2, z * 0.2);
+      if (radNoise > 0.6) {
+          y += (radNoise - 0.6) * 3.0; // Weird mutated bumps
+      }
+  }
+
+  // 16. Ley Lines Logic
+  if (params.leyLines) {
+      // Geometric lines
+      const lineX = Math.abs(Math.sin(x * 0.05 + z * 0.05));
+      const lineZ = Math.abs(Math.cos(x * 0.05 - z * 0.05));
+      if (lineX < 0.1) {
+          y += (0.1 - lineX) * 10.0;
+      }
+      if (lineZ < 0.1) {
+          y += (0.1 - lineZ) * 10.0;
+      }
+  }
+
+  // 17. Pollution Logic
+  if (params.pollution) {
+      const polNoise = noise2D(x * 0.3, z * 0.3);
+      if (polNoise > 0.4) {
+          y -= (polNoise - 0.4) * 4.0; // Corrosive pits
+      }
+  }
 
   // --- Path Flattening Logic ---
 
@@ -247,6 +315,64 @@ export const getTerrainHeight = (x, z, params = { roughness: 1.0, plateau: false
       const moundNoise = noise2D(pathX * 0.02, z * 0.02);
       if (moundNoise > 0.2) {
           pathBaseHeight += (moundNoise - 0.2) * 15.0;
+      }
+  }
+
+  if (params.caves) {
+      const caveNoise = noise2D(pathX * 0.03, z * 0.03);
+      const sinkholeMask = Math.max(0, caveNoise - 0.6) * 2.5;
+      pathBaseHeight -= sinkholeMask * 20.0;
+  }
+
+  if (params.stream) {
+      const streamPathX = Math.sin(z * 0.02) * 30 + Math.sin(z * 0.05) * 10;
+      const distToStream = Math.abs(pathX - streamPathX);
+      const streamWidth = 8.0;
+      if (distToStream < streamWidth) {
+          const streamDip = Math.cos((distToStream / streamWidth) * (Math.PI / 2));
+          pathBaseHeight -= streamDip * 4.0;
+      }
+  }
+
+  if (params.alpineLake) {
+      const lakeCenter = { x: -40, z: -40 };
+      const distToLake = Math.sqrt(Math.pow(pathX - lakeCenter.x, 2) + Math.pow(z - lakeCenter.z, 2));
+      const lakeRadius = 50.0;
+      if (distToLake < lakeRadius) {
+          const lakeDip = Math.cos((distToLake / lakeRadius) * (Math.PI / 2));
+          pathBaseHeight -= lakeDip * 8.0;
+      }
+  }
+
+  if (params.saltMarsh) {
+      const seaLevel = params.baseHeight;
+      if (pathBaseHeight < seaLevel + 3.0 && pathBaseHeight > seaLevel - 1.0) {
+          pathBaseHeight = seaLevel + (pathBaseHeight - seaLevel) * 0.2;
+      }
+  }
+
+  if (params.radiation) {
+      const radNoise = noise2D(pathX * 0.2, z * 0.2);
+      if (radNoise > 0.6) {
+          pathBaseHeight += (radNoise - 0.6) * 3.0;
+      }
+  }
+
+  if (params.leyLines) {
+      const lineX = Math.abs(Math.sin(pathX * 0.05 + z * 0.05));
+      const lineZ = Math.abs(Math.cos(pathX * 0.05 - z * 0.05));
+      if (lineX < 0.1) {
+          pathBaseHeight += (0.1 - lineX) * 10.0;
+      }
+      if (lineZ < 0.1) {
+          pathBaseHeight += (0.1 - lineZ) * 10.0;
+      }
+  }
+
+  if (params.pollution) {
+      const polNoise = noise2D(pathX * 0.3, z * 0.3);
+      if (polNoise > 0.4) {
+          pathBaseHeight -= (polNoise - 0.4) * 4.0;
       }
   }
 

@@ -264,9 +264,29 @@ const Vegetation = ({ region }) => {
       const c1 = baseC1.clone().lerp(baseC2, mix * 0.3).multiplyScalar(variance).offsetHSL(hueShift, 0, 0);
       const c2 = baseC2.clone().lerp(baseC1, mix * 0.3).multiplyScalar(variance).offsetHSL(hueShift, 0, 0);
 
+      const isConifer = rng() < vegParams.coniferRatio;
+
+      let finalScale = scale;
+      if (vegParams.season) {
+          if (vegParams.season === 'autumn' && !isConifer) {
+              const autumnColor = new THREE.Color('#ea580c').lerp(new THREE.Color('#dc2626'), rng());
+              c1.lerp(autumnColor, 0.7);
+              c2.lerp(autumnColor, 0.7);
+          } else if (vegParams.season === 'winter' && !isConifer) {
+              const winterColor = new THREE.Color('#f8fafc');
+              c1.lerp(winterColor, 0.9);
+              c2.lerp(winterColor, 0.9);
+              finalScale *= 0.5; // Bare trees look smaller
+          } else if (vegParams.season === 'spring' && !isConifer) {
+              const springColor = new THREE.Color('#4ade80');
+              c1.lerp(springColor, 0.6);
+              c2.lerp(springColor, 0.6);
+          }
+      }
+
       const tree = {
           position: [x, y, z],
-          scale,
+          scale: finalScale,
           rotation,
           tiltX,
           tiltZ,
@@ -276,7 +296,7 @@ const Vegetation = ({ region }) => {
 
       // Determine type based on region and randomness
       // Adjust per region using coniferRatio (default 0.7 means 70% conifer, so rng < 0.7 is conifer)
-      if (rng() < vegParams.coniferRatio) {
+      if (isConifer) {
         conifer.push(tree);
       } else {
         broadleaf.push(tree);

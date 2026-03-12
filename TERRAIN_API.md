@@ -12,11 +12,19 @@ Controls the physical shape, elevation, and broad texturing of the landscape.
 *   **`plateau`** *(Boolean, default: false)*: If true, flattens the peaks of the generated noise, creating flat-topped mesas. It also triggers a dusty red vertex color blend near the edges of steep drops.
 *   **`coastal`** *(Boolean, default: false)*: If true, flattens terrain below sea level, ensuring an absolute flat water line, and triggers sandy vertex color blending on low-lying ground.
 *   **`baseHeight`** *(Number, default: 0.0)*: Absolute vertical offset applied to the entire generated terrain mesh, shifting the floor up or down relative to `y=0`.
+*   **`caves`** *(Boolean, default: false)*: Subtracts height using a smoothed noise mask to create large, dark sinkholes.
+*   **`stream`** *(Boolean, default: false)*: Creates a continuous, meandering dip through the terrain and spawns a water plane at `y=-2`.
+*   **`alpineLake`** *(Boolean, default: false)*: Creates a localized, flattened dip near `(-40, -40)` and spawns a circular water plane.
+*   **`saltMarsh`** *(Boolean, default: false)*: Plateaus terrain near sea level and blends muddy green vertex colors.
+*   **`radiation`** *(Boolean, default: false)*: Adds irregular bumps and glowing green vertex spots based on high-frequency noise.
+*   **`leyLines`** *(Boolean, default: false)*: Creates geometric, raised ridges crossing the terrain with glowing purple vertex colors.
+*   **`pollution`** *(Boolean, default: false)*: Subtly pits the terrain and blends dark, oily patches.
 
 ### `vegetationParams`
 Controls the flora ecosystem.
 *   **`density`** *(Number, default: 1.0)*: Multiplier for the base number of trees generated. Values < 1 create sparse landscapes (e.g., deserts, wastelands), while values > 1 create dense forests.
 *   **`coniferRatio`** *(Number, default: 0.7)*: Determines the proportion of conifer (pine) trees to broadleaf trees. Range is `0.0` (all broadleaf) to `1.0` (all conifer).
+*   **`season`** *(String, optional)*: Shifts broadleaf vegetation colors (`'spring'`, `'summer'`, `'autumn'`, `'winter'`).
 
 ### `geologyParams`
 Controls non-flora ground clutter and geologic points of interest.

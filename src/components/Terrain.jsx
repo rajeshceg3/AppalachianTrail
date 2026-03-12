@@ -49,6 +49,13 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
     const plateauDustColor = new THREE.Color('#c2410c');
     const snowColor = new THREE.Color('#ffffff');
     const screeColor = new THREE.Color('#8b8580');
+    const pollutionColor = new THREE.Color('#1a1a1a');
+    const radiationColor = new THREE.Color('#39ff14');
+    const leyLineColor = new THREE.Color('#b514ff');
+    const saltMarshColor = new THREE.Color('#4a5d23');
+    const caveDarkness = new THREE.Color('#0f0f0f');
+    const streamBedColor = new THREE.Color('#9ca3af');
+    const alpineLakeShoreColor = new THREE.Color('#475569');
 
     const terrainParams = region?.terrainParams || {};
     const baseHeight = terrainParams.baseHeight || 0;
@@ -98,6 +105,65 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
           const plateauLevel = baseHeight + 8.0;
           if (h > plateauLevel - 4.0 && h <= plateauLevel) {
                c.lerp(plateauDustColor, rockFactor * 0.6);
+          }
+      }
+
+      if (terrainParams.pollution) {
+          const polNoise = noise2D(x * 0.3, -y * 0.3);
+          if (polNoise > 0.4) {
+              const polFactor = THREE.MathUtils.smoothstep(0.4, 0.7, polNoise);
+              c.lerp(pollutionColor, polFactor * 0.8);
+          }
+      }
+
+      if (terrainParams.radiation) {
+          const radNoise = noise2D(x * 0.2, -y * 0.2);
+          if (radNoise > 0.6) {
+              const radFactor = THREE.MathUtils.smoothstep(0.6, 0.9, radNoise);
+              c.lerp(radiationColor, radFactor * 0.6);
+          }
+      }
+
+      if (terrainParams.leyLines) {
+          const lineX = Math.abs(Math.sin(x * 0.05 + -y * 0.05));
+          const lineZ = Math.abs(Math.cos(x * 0.05 - -y * 0.05));
+          if (lineX < 0.1 || lineZ < 0.1) {
+              const lineFactor = 1.0 - Math.min(lineX, lineZ) / 0.1;
+              c.lerp(leyLineColor, lineFactor * 0.8);
+          }
+      }
+
+      if (terrainParams.saltMarsh) {
+          const seaLevel = baseHeight;
+          if (h < seaLevel + 3.0 && h > seaLevel - 1.0) {
+              const marshFactor = 1.0 - Math.abs(h - (seaLevel + 1.0)) / 2.0;
+              c.lerp(saltMarshColor, marshFactor * 0.7);
+          }
+      }
+
+      if (terrainParams.caves) {
+          const caveNoise = noise2D(x * 0.03, -y * 0.03);
+          if (caveNoise > 0.6) {
+              const sinkholeFactor = THREE.MathUtils.smoothstep(0.6, 1.0, caveNoise);
+              c.lerp(caveDarkness, sinkholeFactor * 0.9);
+          }
+      }
+
+      if (terrainParams.stream) {
+          const streamPathX = Math.sin(-y * 0.02) * 30 + Math.sin(-y * 0.05) * 10;
+          const distToStream = Math.abs(x - streamPathX);
+          if (distToStream < 8.0) {
+              const streamFactor = 1.0 - distToStream / 8.0;
+              c.lerp(streamBedColor, streamFactor * 0.8);
+          }
+      }
+
+      if (terrainParams.alpineLake) {
+          const lakeCenter = { x: -40, z: -40 };
+          const distToLake = Math.sqrt(Math.pow(x - lakeCenter.x, 2) + Math.pow(-y - lakeCenter.z, 2));
+          if (distToLake < 50.0) {
+              const shoreFactor = 1.0 - distToLake / 50.0;
+              c.lerp(alpineLakeShoreColor, shoreFactor * 0.7);
           }
       }
 
