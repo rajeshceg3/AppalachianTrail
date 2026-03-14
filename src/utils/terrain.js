@@ -245,6 +245,44 @@ export const getTerrainHeight = (x, z, params = { roughness: 1.0, plateau: false
       }
   }
 
+  // 18. Oasis Logic
+  if (params.oasis) {
+      const oasisCenter = { x: 40, z: 40 };
+      const distToOasis = Math.sqrt(Math.pow(x - oasisCenter.x, 2) + Math.pow(z - oasisCenter.z, 2));
+      const oasisRadius = 25.0;
+      if (distToOasis < oasisRadius) {
+          const oasisDip = Math.cos((distToOasis / oasisRadius) * (Math.PI / 2));
+          y -= oasisDip * 6.0;
+      }
+  }
+
+  // 19. Ancient Ruins Logic
+  if (params.ancientRuins) {
+      const ruinNoise = noise2D(x * 0.05, z * 0.05);
+      if (ruinNoise > 0.3) {
+          // Create step-like terraces
+          const baseRuinHeight = (ruinNoise - 0.3) * 20.0;
+          y += Math.floor(baseRuinHeight / 3.0) * 3.0;
+      }
+  }
+
+  // 20. Hazardous Pools Logic
+  if (params.hazardousPools) {
+      const poolCenter1 = { x: -30, z: 30 };
+      const poolCenter2 = { x: 50, z: -20 };
+
+      const dist1 = Math.sqrt(Math.pow(x - poolCenter1.x, 2) + Math.pow(z - poolCenter1.z, 2));
+      const dist2 = Math.sqrt(Math.pow(x - poolCenter2.x, 2) + Math.pow(z - poolCenter2.z, 2));
+
+      if (dist1 < 15.0) {
+          const poolDip = Math.cos((dist1 / 15.0) * (Math.PI / 2));
+          y -= poolDip * 5.0;
+      } else if (dist2 < 20.0) {
+          const poolDip = Math.cos((dist2 / 20.0) * (Math.PI / 2));
+          y -= poolDip * 6.0;
+      }
+  }
+
   // --- Path Flattening Logic ---
 
   // Define width - slightly organic
@@ -373,6 +411,40 @@ export const getTerrainHeight = (x, z, params = { roughness: 1.0, plateau: false
       const polNoise = noise2D(pathX * 0.3, z * 0.3);
       if (polNoise > 0.4) {
           pathBaseHeight -= (polNoise - 0.4) * 4.0;
+      }
+  }
+
+  if (params.oasis) {
+      const oasisCenter = { x: 40, z: 40 };
+      const distToOasis = Math.sqrt(Math.pow(pathX - oasisCenter.x, 2) + Math.pow(z - oasisCenter.z, 2));
+      const oasisRadius = 25.0;
+      if (distToOasis < oasisRadius) {
+          const oasisDip = Math.cos((distToOasis / oasisRadius) * (Math.PI / 2));
+          pathBaseHeight -= oasisDip * 6.0;
+      }
+  }
+
+  if (params.ancientRuins) {
+      const ruinNoise = noise2D(pathX * 0.05, z * 0.05);
+      if (ruinNoise > 0.3) {
+          const baseRuinHeight = (ruinNoise - 0.3) * 20.0;
+          pathBaseHeight += Math.floor(baseRuinHeight / 3.0) * 3.0;
+      }
+  }
+
+  if (params.hazardousPools) {
+      const poolCenter1 = { x: -30, z: 30 };
+      const poolCenter2 = { x: 50, z: -20 };
+
+      const dist1 = Math.sqrt(Math.pow(pathX - poolCenter1.x, 2) + Math.pow(z - poolCenter1.z, 2));
+      const dist2 = Math.sqrt(Math.pow(pathX - poolCenter2.x, 2) + Math.pow(z - poolCenter2.z, 2));
+
+      if (dist1 < 15.0) {
+          const poolDip = Math.cos((dist1 / 15.0) * (Math.PI / 2));
+          pathBaseHeight -= poolDip * 5.0;
+      } else if (dist2 < 20.0) {
+          const poolDip = Math.cos((dist2 / 20.0) * (Math.PI / 2));
+          pathBaseHeight -= poolDip * 6.0;
       }
   }
 

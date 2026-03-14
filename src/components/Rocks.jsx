@@ -23,16 +23,20 @@ const Rocks = ({ region }) => {
   const logCount = geoParams.hasLogs ? 150 : 0;
   const driftwoodCount = geoParams.hasDriftwood ? 150 : 0;
   const debrisCount = geoParams.hasDebris ? 250 : 0;
+  const floatingIslandCount = geoParams.floatingIslands ? 15 : 0;
+  const utilityLineCount = geoParams.hasUtilityLines ? 80 : 0;
 
-  const { rocks, pebbles, minerals, logs, driftwood, debris } = useMemo(() => {
+  const { rocks, pebbles, minerals, logs, driftwood, debris, floatingIslands, utilityLines } = useMemo(() => {
     const rocks = [];
     const pebbles = [];
     const minerals = [];
     const logs = [];
     const driftwood = [];
     const debris = [];
+    const floatingIslands = [];
+    const utilityLines = [];
     let attempts = 0;
-    const maxAttempts = (rockCount + pebbleCount + mineralCount + logCount + driftwoodCount + debrisCount) * 10;
+    const maxAttempts = (rockCount + pebbleCount + mineralCount + logCount + driftwoodCount + debrisCount + floatingIslandCount + utilityLineCount) * 10;
 
     // Create a seeded RNG based on region ID (offset by 1 to differ from trees)
     const seed = hashCode(region.id || 'default') + 1;
@@ -255,8 +259,63 @@ const Rocks = ({ region }) => {
         debris.push({ position: [x, yPos, z], scale, rotation });
     }
 
-    return { rocks, pebbles, minerals, logs, driftwood, debris };
-  }, [region.id, rockCount, pebbleCount, mineralCount, logCount, driftwoodCount, debrisCount, region.terrainParams]);
+    // Generate Floating Islands
+    attempts = 0;
+    while (floatingIslands.length < floatingIslandCount && attempts < maxAttempts) {
+        attempts++;
+        const z = (rng() - 0.5) * 800; // Keep slightly more central
+        const x = (rng() - 0.5) * 800;
+
+        const pathX = getPathX(z);
+        const dist = Math.abs(x - pathX);
+        if (dist < 10.0) continue; // Don't float directly over the main path
+
+        const baseScale = 2.0 + rng() * 4.0;
+        const scale = [
+            baseScale * (0.8 + rng() * 0.4),
+            baseScale * (0.4 + rng() * 0.4), // Flatter
+            baseScale * (0.8 + rng() * 0.4)
+        ];
+
+        const minH = getMinTerrainHeight(x, z, scale[0], region.terrainParams);
+        // Float 15 to 35 units above the ground
+        const yPos = minH + 15.0 + (rng() * 20.0);
+
+        const rotation = [rng() * 0.5, rng() * Math.PI * 2, rng() * 0.5];
+
+        floatingIslands.push({ position: [x, yPos, z], scale, rotation });
+    }
+
+    // Generate Utility Lines (Pipes)
+    attempts = 0;
+    while (utilityLines.length < utilityLineCount && attempts < maxAttempts) {
+        attempts++;
+        const z = (rng() - 0.5) * 1200;
+        const x = (rng() - 0.5) * 1200;
+
+        const baseScale = 0.5 + rng() * 0.5;
+        const scale = [
+            baseScale * 0.2, // thin radius
+            baseScale * (5.0 + rng() * 10.0), // long length
+            baseScale * 0.2
+        ];
+
+        const minH = getMinTerrainHeight(x, z, scale[1] / 2, region.terrainParams);
+        // Sometimes buried, sometimes sticking out
+        const yPos = minH + (rng() - 0.5) * 1.5;
+
+        // Often lying flat or slightly angled
+        const rotation = [
+            Math.PI / 2 + (rng() - 0.5) * 0.2,
+            rng() * Math.PI * 2,
+            0
+        ];
+
+        utilityLines.push({ position: [x, yPos, z], scale, rotation });
+    }
+
+    return { rocks, pebbles, minerals, logs, driftwood, debris, floatingIslands, utilityLines };
+  }, [region.id, rockCount, pebbleCount, mineralCount, logCount, driftwoodCount, debrisCount, floatingIslandCount, utilityLineCount, region.terrainParams]);
 
   const { roughnessMap, normalMap } = useMemo(() => {
     const rMap = generateHeightMap(256, 256, 4.0, 4);
@@ -392,6 +451,41 @@ const Rocks = ({ region }) => {
             {debris.map((d, i) => (
                 <Instance
                 key={`deb-${i}`}
+                position={d.position}
+                scale={d.scale}
+                rotation={d.rotation}
+                />
+            ))}
+          </Instances>
+        )}
+
+        {/* Floating Islands */}
+        {floatingIslandCount > 0 && (
+          <Instances range={floatingIslandCount} material={rockMaterial}>
+            <icosahedronGeometry args={[1, 0]} />
+            {floatingIslands.map((d, i) => (
+                <Instance
+                key={`float-${i}`}
+                position={d.position}
+                scale={d.scale}
+                rotation={d.rotation}
+                />
+            ))}
+          </Instances>
+        )}
+
+        {/* Utility Lines (Pipes) */}
+        {utilityLineCount > 0 && (
+          <Instances range={utilityLineCount}>
+            <cylinderGeometry args={[1, 1, 1, 8]} />
+            <meshStandardMaterial
+                color="#475569" // slate grey metal
+                roughness={0.6}
+                metalness={0.3}
+            />
+            {utilityLines.map((d, i) => (
+                <Instance
+                key={`util-${i}`}
                 position={d.position}
                 scale={d.scale}
                 rotation={d.rotation}
