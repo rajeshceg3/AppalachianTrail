@@ -21,8 +21,9 @@
   - **100% Complete**: Implemented new unique geological traits across all 11 defined regions in `src/data/regions.js`.
   - Added dynamic parameters to `terrainParams`: `caves`, `pollution`, `saltMarsh`, `leyLines`, `radiation`, `stream`, `alpineLake`.
   - Added `season` parameter to `vegetationParams` to cycle broadleaf foliage through spring, summer, autumn, and winter colors.
+  - Added remaining Phase 4 unique features: `oasis` (Desert), `hasUtilityLines` (Urban), `caves` (Coastal), `ancientRuins` & `floatingIslands` (Mystical), `hazardousPools` (Post-Apocalyptic), and generalized `snowLine` & `scree` logic (Mountain).
   - Dynamic procedural generation logic integrated directly into `src/utils/terrain.js` (geometry) and `src/components/Terrain.jsx` (vertex coloring).
-  - Extended environment elements in `Scene.jsx` (heat shimmer particles, water meshes).
+  - Extended environment elements in `Scene.jsx` (heat shimmer particles, water meshes, hazardous pools).
 
 ## Completed Requirements
 - [x] Tech stack setup (React, Vite, Three.js, GSAP/Framer Motion, Tailwind).
@@ -45,7 +46,7 @@
 - [x] Final Density & Scale Expansion.
 - [x] Robust Grounding & Natural Variation.
 - [x] Fixed Map View scrolling bug.
-- [x] **Terrain Upgrade (Phase 4)**: 100% location specific unique features completed.
+- [x] **Terrain Upgrade (Phase 4)**: 100% location specific unique features completed (including Phase 4 missing unique biome elements like oases, floating islands, and utility lines).
 
 ## Next Steps
 - Final deployment configuration (external).

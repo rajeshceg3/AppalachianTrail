@@ -243,7 +243,17 @@ const Vegetation = ({ region }) => {
       // Soft clearing around path (4.0 to 8.0 units)
       const pathProb = THREE.MathUtils.smoothstep(4.0, 8.0, dist);
 
-      const placementProb = noiseProb * pathProb;
+      let placementProb = noiseProb * pathProb;
+
+      // Force high probability around oasis
+      if (region.terrainParams?.oasis) {
+          const distToOasis = Math.sqrt(Math.pow(x - 40, 2) + Math.pow(z - 40, 2));
+          if (distToOasis > 15 && distToOasis < 30) {
+              placementProb = 1.0; // Guaranteed tree
+          } else if (distToOasis <= 15) {
+              placementProb = 0.0; // Clear area inside the oasis
+          }
+      }
 
       if (rng() > placementProb) continue;
 

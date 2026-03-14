@@ -56,6 +56,9 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
     const caveDarkness = new THREE.Color('#0f0f0f');
     const streamBedColor = new THREE.Color('#9ca3af');
     const alpineLakeShoreColor = new THREE.Color('#475569');
+    const oasisShoreColor = new THREE.Color('#22c55e');
+    const ancientRuinColor = new THREE.Color('#374151');
+    const hazardousPoolColor = new THREE.Color('#39ff14');
 
     const terrainParams = region?.terrainParams || {};
     const baseHeight = terrainParams.baseHeight || 0;
@@ -84,12 +87,15 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
       const peakFactor = THREE.MathUtils.smoothstep(35, 60, h);
       c.lerp(highPeak, peakFactor * 0.4);
 
-      if (region?.id === 'maine') {
+      if (terrainParams.scree) {
           if (slope < 0.7 && h > 30) {
                const screeFactor = 1.0 - THREE.MathUtils.smoothstep(0.4, 0.7, slope);
                c.lerp(screeColor, screeFactor * 0.9);
           }
-          const snowThreshold = 45 + n * 3.0;
+      }
+
+      if (terrainParams.snowLine) {
+          const snowThreshold = terrainParams.snowLine + n * 3.0;
           if (h > snowThreshold) {
                const snowFactor = THREE.MathUtils.smoothstep(snowThreshold, snowThreshold + 10, h);
                c.lerp(snowColor, snowFactor * 0.95);
@@ -164,6 +170,39 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
           if (distToLake < 50.0) {
               const shoreFactor = 1.0 - distToLake / 50.0;
               c.lerp(alpineLakeShoreColor, shoreFactor * 0.7);
+          }
+      }
+
+      if (terrainParams.oasis) {
+          const oasisCenter = { x: 40, z: 40 };
+          const distToOasis = Math.sqrt(Math.pow(x - oasisCenter.x, 2) + Math.pow(-y - oasisCenter.z, 2));
+          if (distToOasis < 25.0) {
+              const shoreFactor = 1.0 - distToOasis / 25.0;
+              c.lerp(oasisShoreColor, shoreFactor * 0.6);
+          }
+      }
+
+      if (terrainParams.ancientRuins) {
+          const ruinNoise = noise2D(x * 0.05, -y * 0.05);
+          if (ruinNoise > 0.3) {
+              const ruinFactor = THREE.MathUtils.smoothstep(0.3, 0.6, ruinNoise);
+              c.lerp(ancientRuinColor, ruinFactor * 0.85);
+          }
+      }
+
+      if (terrainParams.hazardousPools) {
+          const poolCenter1 = { x: -30, z: 30 };
+          const poolCenter2 = { x: 50, z: -20 };
+          const dist1 = Math.sqrt(Math.pow(x - poolCenter1.x, 2) + Math.pow(-y - poolCenter1.z, 2));
+          const dist2 = Math.sqrt(Math.pow(x - poolCenter2.x, 2) + Math.pow(-y - poolCenter2.z, 2));
+
+          if (dist1 < 17.0) {
+              const poolFactor = 1.0 - dist1 / 17.0;
+              // Add glowing edge near the pool
+              if (dist1 > 13.0) c.lerp(hazardousPoolColor, poolFactor * 0.9);
+          } else if (dist2 < 22.0) {
+              const poolFactor = 1.0 - dist2 / 22.0;
+              if (dist2 > 18.0) c.lerp(hazardousPoolColor, poolFactor * 0.9);
           }
       }
 

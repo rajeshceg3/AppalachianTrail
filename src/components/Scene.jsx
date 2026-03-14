@@ -333,6 +333,28 @@ const Scene = ({ region, audioEnabled }) => {
         </mesh>
       )}
 
+      {/* Oasis Water Mesh */}
+      {region.terrainParams?.oasis && (
+        <mesh position={[40, region.terrainParams.baseHeight - 3, 40]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[25, 32]} />
+          <meshStandardMaterial color="#0369a1" roughness={0.1} metalness={0.8} transparent opacity={0.85} />
+        </mesh>
+      )}
+
+      {/* Hazardous Pools Mesh */}
+      {region.terrainParams?.hazardousPools && (
+        <group>
+          <mesh position={[-30, region.terrainParams.baseHeight - 2, 30]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[15, 32]} />
+            <meshStandardMaterial color="#84cc16" emissive="#39ff14" emissiveIntensity={0.5} roughness={0.2} metalness={0.6} transparent opacity={0.9} />
+          </mesh>
+          <mesh position={[50, region.terrainParams.baseHeight - 3, -20]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[20, 32]} />
+            <meshStandardMaterial color="#84cc16" emissive="#39ff14" emissiveIntensity={0.5} roughness={0.2} metalness={0.6} transparent opacity={0.9} />
+          </mesh>
+        </group>
+      )}
+
       {/* Atmospheric particles */}
       <AtmosphericParticles color={region.particles} type={region.particleType} />
       {/* Close-up "Macro" Particles for Parallax/Depth */}

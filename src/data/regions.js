@@ -17,7 +17,7 @@ export const regions = [
     windIntensity: 0.8,
     birdActivity: 0.1,
     waterProbability: 0.0,
-    terrainParams: { roughness: 1.5, plateau: true, coastal: false, baseHeight: -5.0, dunes: true },
+    terrainParams: { roughness: 1.5, plateau: true, coastal: false, baseHeight: -5.0, dunes: true, oasis: true },
     vegetationParams: { density: 0.1, coniferRatio: 0.0, season: 'summer' },
     geologyParams: { rockCount: 2.0, hasMinerals: true, hasLogs: false, hasDriftwood: false, hasDebris: false }
   },
@@ -41,7 +41,7 @@ export const regions = [
     waterProbability: 0.1,
     terrainParams: { roughness: 0.2, plateau: false, coastal: false, baseHeight: -2.0, urbanRuins: true, pollution: true },
     vegetationParams: { density: 0.3, coniferRatio: 0.1, season: 'summer' },
-    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true }
+    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true, hasUtilityLines: true }
   },
   {
     id: 'acadia',
@@ -61,7 +61,7 @@ export const regions = [
     windIntensity: 0.7,
     birdActivity: 0.9,
     waterProbability: 1.0,
-    terrainParams: { roughness: 0.8, plateau: false, coastal: true, baseHeight: -10.0, saltMarsh: true },
+    terrainParams: { roughness: 0.8, plateau: false, coastal: true, baseHeight: -10.0, saltMarsh: true, caves: true },
     vegetationParams: { density: 0.8, coniferRatio: 0.9, season: 'spring' },
     geologyParams: { rockCount: 1.8, hasMinerals: false, hasLogs: false, hasDriftwood: true, hasDebris: false }
   },
@@ -83,9 +83,9 @@ export const regions = [
     windIntensity: 0.2,
     birdActivity: 0.4,
     waterProbability: 0.7,
-    terrainParams: { roughness: 0.5, plateau: false, coastal: false, baseHeight: 0.0, magicMounds: true, leyLines: true },
+    terrainParams: { roughness: 0.5, plateau: false, coastal: false, baseHeight: 0.0, magicMounds: true, leyLines: true, ancientRuins: true },
     vegetationParams: { density: 1.5, coniferRatio: 0.5, season: 'summer' },
-    geologyParams: { rockCount: 0.8, hasMinerals: true, hasLogs: true, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 0.8, hasMinerals: true, hasLogs: true, hasDriftwood: false, hasDebris: false, floatingIslands: true }
   },
   {
     id: 'wasteland',
@@ -105,7 +105,7 @@ export const regions = [
     windIntensity: 0.9,
     birdActivity: 0.0,
     waterProbability: 0.0,
-    terrainParams: { roughness: 1.2, plateau: false, coastal: false, baseHeight: 2.0, craters: true, radiation: true },
+    terrainParams: { roughness: 1.2, plateau: false, coastal: false, baseHeight: 2.0, craters: true, radiation: true, hazardousPools: true },
     vegetationParams: { density: 0.2, coniferRatio: 1.0, season: 'summer' },
     geologyParams: { rockCount: 2.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true }
   },
@@ -215,7 +215,7 @@ export const regions = [
     windIntensity: 0.7,
     birdActivity: 0.3,
     waterProbability: 0.6,
-    terrainParams: { roughness: 1.3, plateau: false, coastal: false, baseHeight: 8.0 },
+    terrainParams: { roughness: 1.3, plateau: false, coastal: false, baseHeight: 8.0, scree: true },
     vegetationParams: { density: 0.9, coniferRatio: 0.9, season: 'autumn' },
     geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   },
@@ -237,7 +237,7 @@ export const regions = [
     windIntensity: 0.9,
     birdActivity: 0.1,
     waterProbability: 0.9,
-    terrainParams: { roughness: 1.5, plateau: false, coastal: false, baseHeight: 12.0, alpineLake: true },
+    terrainParams: { roughness: 1.5, plateau: false, coastal: false, baseHeight: 12.0, alpineLake: true, snowLine: 45, scree: true },
     vegetationParams: { density: 0.8, coniferRatio: 1.0, season: 'winter' },
     geologyParams: { rockCount: 2.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
   }
