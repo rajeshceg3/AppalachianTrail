@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Experience = ({ selectedRegion, onBackToMap }) => {
   const [loaded, setLoaded] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [isIdle, setIsIdle] = useState(false);
 
   useEffect(() => {
     // Reset loaded state when region changes
@@ -28,7 +29,7 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
         <color attach="background" args={[selectedRegion.fogColor]} />
 
         <Suspense fallback={null}>
-          <Scene region={selectedRegion} audioEnabled={audioEnabled} />
+          <Scene region={selectedRegion} audioEnabled={audioEnabled} onIdleStateChange={setIsIdle} />
           <Environment preset={selectedRegion.environment} />
         </Suspense>
       </Canvas>
@@ -85,6 +86,24 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
         <h3 className="text-stone-600 text-sm tracking-[0.5em] uppercase font-light">{selectedRegion.name}</h3>
         <p className="text-stone-400 text-[9px] tracking-[0.3em] uppercase mt-4">{selectedRegion.details}</p>
       </motion.div>
+
+      <AnimatePresence>
+        {isIdle && selectedRegion.pauseText && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 3, ease: "easeInOut" }}
+            className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center"
+          >
+            <div className="text-center max-w-md px-8 pt-64">
+                <p className="text-stone-600/80 text-xs tracking-[0.3em] uppercase font-light leading-loose" style={{ textShadow: `0 0 10px ${selectedRegion.fogColor}` }}>
+                  {selectedRegion.pauseText}
+                </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Loader />
     </div>

@@ -3,10 +3,14 @@ import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX } from '../utils/terrain';
 
-const Controls = ({ audioRef, region }) => {
+const Controls = ({ audioRef, region, onIdleStateChange }) => {
   const { camera } = useThree();
   const moveForward = useRef(false);
   const moveBackward = useRef(false);
+
+  // Idle tracking
+  const idleTimeRef = useRef(0);
+  const isIdleRef = useRef(false);
 
   // Camera Rotation State
   // targetEuler tracks the desired rotation from input
@@ -197,6 +201,25 @@ const Controls = ({ audioRef, region }) => {
     targetVelocityVec.current.set(0, 0, 0);
     if (moveForward.current) targetVelocityVec.current.add(forwardVec.current);
     if (moveBackward.current) targetVelocityVec.current.sub(forwardVec.current);
+
+    // Idle Detection Logic
+    const isMoving = targetVelocityVec.current.lengthSq() > 0.001 || velocity.current.lengthSq() > 0.001;
+    // We can also check if targetEuler differs significantly from currentEuler if we want to reset idle on looking,
+    // but just checking movement is usually enough, or we can add a drag check.
+    // For now, let's just reset on movement.
+    if (isMoving) {
+        idleTimeRef.current = 0;
+        if (isIdleRef.current) {
+            isIdleRef.current = false;
+            if (onIdleStateChange) onIdleStateChange(false);
+        }
+    } else {
+        idleTimeRef.current += delta;
+        if (idleTimeRef.current > 5.0 && !isIdleRef.current) {
+            isIdleRef.current = true;
+            if (onIdleStateChange) onIdleStateChange(true);
+        }
+    }
 
     // Dynamic Speed based on Slope
     let currentWalkSpeed = WALK_SPEED;
