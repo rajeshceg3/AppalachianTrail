@@ -19,7 +19,9 @@ export const regions = [
     waterProbability: 0.0,
     terrainParams: { roughness: 1.5, plateau: true, coastal: false, baseHeight: -5.0, dunes: true, oasis: true },
     vegetationParams: { density: 0.1, coniferRatio: 0.0, season: 'summer' },
-    geologyParams: { rockCount: 2.0, hasMinerals: true, hasLogs: false, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 2.0, hasMinerals: true, hasLogs: false, hasDriftwood: false, hasDebris: false },
+    elevation: [1000, 1100, 1050, 1200, 1150, 1300, 1250],
+    pauseText: 'The wind sculpts the sandstone, a patient artist.'
   },
   {
     id: 'nyc',
@@ -41,7 +43,9 @@ export const regions = [
     waterProbability: 0.1,
     terrainParams: { roughness: 0.2, plateau: false, coastal: false, baseHeight: -2.0, urbanRuins: true, pollution: true },
     vegetationParams: { density: 0.3, coniferRatio: 0.1, season: 'summer' },
-    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true, hasUtilityLines: true }
+    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true, hasUtilityLines: true },
+    elevation: [50, 60, 40, 80, 50, 100, 30],
+    pauseText: 'Nature gently reclaims what was once forgotten.'
   },
   {
     id: 'acadia',
@@ -63,7 +67,9 @@ export const regions = [
     waterProbability: 1.0,
     terrainParams: { roughness: 0.8, plateau: false, coastal: true, baseHeight: -10.0, saltMarsh: true, caves: true },
     vegetationParams: { density: 0.8, coniferRatio: 0.9, season: 'spring' },
-    geologyParams: { rockCount: 1.8, hasMinerals: false, hasLogs: false, hasDriftwood: true, hasDebris: false }
+    geologyParams: { rockCount: 1.8, hasMinerals: false, hasLogs: false, hasDriftwood: true, hasDebris: false },
+    elevation: [0, 150, 100, 250, 150, 300, 50],
+    pauseText: 'The tide draws breath, a rhythm older than memory.'
   },
   {
     id: 'feywood',
@@ -85,7 +91,9 @@ export const regions = [
     waterProbability: 0.7,
     terrainParams: { roughness: 0.5, plateau: false, coastal: false, baseHeight: 0.0, magicMounds: true, leyLines: true, ancientRuins: true },
     vegetationParams: { density: 1.5, coniferRatio: 0.5, season: 'summer' },
-    geologyParams: { rockCount: 0.8, hasMinerals: true, hasLogs: true, hasDriftwood: false, hasDebris: false, floatingIslands: true }
+    geologyParams: { rockCount: 0.8, hasMinerals: true, hasLogs: true, hasDriftwood: false, hasDebris: false, floatingIslands: true },
+    elevation: [200, 250, 220, 300, 280, 350, 310],
+    pauseText: 'Silence hums with an ancient, unseen energy.'
   },
   {
     id: 'wasteland',
@@ -107,7 +115,9 @@ export const regions = [
     waterProbability: 0.0,
     terrainParams: { roughness: 1.2, plateau: false, coastal: false, baseHeight: 2.0, craters: true, radiation: true, hazardousPools: true },
     vegetationParams: { density: 0.2, coniferRatio: 1.0, season: 'summer' },
-    geologyParams: { rockCount: 2.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true }
+    geologyParams: { rockCount: 2.5, hasMinerals: false, hasLogs: false, hasDriftwood: false, hasDebris: true },
+    elevation: [800, 750, 850, 700, 900, 650, 950],
+    pauseText: 'Even in the ash, a fragile stillness remains.'
   },
   {
     id: 'georgia',
@@ -129,7 +139,9 @@ export const regions = [
     waterProbability: 0.5,
     terrainParams: { roughness: 1.0, plateau: false, coastal: false, baseHeight: 0.0, caves: true },
     vegetationParams: { density: 1.0, coniferRatio: 0.7, season: 'spring' },
-    geologyParams: { rockCount: 1.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 1.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false },
+    elevation: [2500, 3000, 2800, 3500, 3200, 3800, 3700],
+    pauseText: 'The morning air carries the scent of damp earth and new beginnings.'
   },
   {
     id: 'smokies',
@@ -151,7 +163,9 @@ export const regions = [
     waterProbability: 0.8,
     terrainParams: { roughness: 1.1, plateau: false, coastal: false, baseHeight: 5.0, stream: true },
     vegetationParams: { density: 1.2, coniferRatio: 0.8, season: 'summer' },
-    geologyParams: { rockCount: 1.1, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 1.1, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false },
+    elevation: [4000, 4800, 4500, 5500, 5200, 6000, 6600],
+    pauseText: 'A sea of blue ridges fading into the ancient breath of the mountains.'
   },
   {
     id: 'virginia',
@@ -173,7 +187,9 @@ export const regions = [
     waterProbability: 0.4,
     terrainParams: { roughness: 0.9, plateau: false, coastal: false, baseHeight: 2.0 },
     vegetationParams: { density: 1.1, coniferRatio: 0.6, season: 'summer' },
-    geologyParams: { rockCount: 0.9, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 0.9, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false },
+    elevation: [2000, 2500, 2200, 3000, 2800, 3200, 3100],
+    pauseText: 'The valley floor opens wide, a patchwork quilt under an endless sky.'
   },
   {
     id: 'mid-atlantic',
@@ -195,7 +211,9 @@ export const regions = [
     waterProbability: 0.2,
     terrainParams: { roughness: 1.0, plateau: false, coastal: false, baseHeight: 0.0 },
     vegetationParams: { density: 1.0, coniferRatio: 0.5, season: 'summer' },
-    geologyParams: { rockCount: 1.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 1.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false },
+    elevation: [1000, 1500, 1200, 1800, 1600, 2000, 1900],
+    pauseText: 'Sunlight filters through the canopy, painting shadows on the quiet floor.'
   },
   {
     id: 'new-england',
@@ -217,7 +235,9 @@ export const regions = [
     waterProbability: 0.6,
     terrainParams: { roughness: 1.3, plateau: false, coastal: false, baseHeight: 8.0, scree: true },
     vegetationParams: { density: 0.9, coniferRatio: 0.9, season: 'autumn' },
-    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 1.5, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false },
+    elevation: [3000, 4000, 3500, 5000, 4500, 5500, 5200],
+    pauseText: 'Granite bones of the earth rise to meet the crisp, autumn wind.'
   },
   {
     id: 'maine',
@@ -239,6 +259,8 @@ export const regions = [
     waterProbability: 0.9,
     terrainParams: { roughness: 1.5, plateau: false, coastal: false, baseHeight: 12.0, alpineLake: true, snowLine: 45, scree: true },
     vegetationParams: { density: 0.8, coniferRatio: 1.0, season: 'winter' },
-    geologyParams: { rockCount: 2.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false }
+    geologyParams: { rockCount: 2.0, hasMinerals: false, hasLogs: true, hasDriftwood: false, hasDebris: false },
+    elevation: [2000, 3000, 2500, 4000, 3500, 5000, 5268],
+    pauseText: 'The northern terminus, where the trail ends and the sky begins.'
   }
 ];

@@ -170,7 +170,7 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200,
   );
 };
 
-const Scene = ({ region, audioEnabled }) => {
+const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
   const audioRef = useRef(null);
   const windRef = useRef({ intensity: 0, gust: 0, cloud: 0 }); // Shared wind/weather state
   const fogRef = useRef();
@@ -284,7 +284,7 @@ const Scene = ({ region, audioEnabled }) => {
   return (
     <>
       <AudioController ref={audioRef} region={region} enabled={audioEnabled} windRef={windRef} />
-      <Controls audioRef={audioRef} region={region} />
+      <Controls audioRef={audioRef} region={region} onIdleStateChange={onIdleStateChange} />
       <fogExp2 ref={fogRef} attach="fog" args={[region.fogColor, region.fogDensity]} />
       <SoftShadows size={25} samples={10} focus={0.5} />
 

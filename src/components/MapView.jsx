@@ -2,7 +2,46 @@ import React, { useRef, useEffect, useLayoutEffect, useMemo, useState } from 're
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import MapAmbience from './MapAmbience';
 
-const RegionNode = ({ region, index, onSelect, isEven }) => {
+const ElevationProfile = ({ elevation }) => {
+  if (!elevation || elevation.length === 0) return null;
+
+  const min = Math.min(...elevation);
+  const max = Math.max(...elevation);
+  const range = max - min || 1; // Prevent division by zero
+
+  // Create simple SVG sparkline path
+  const points = elevation.map((val, i) => {
+    const x = (i / (elevation.length - 1)) * 100;
+    const y = 100 - ((val - min) / range) * 100;
+    return `${x},${y}`;
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 40 }}
+      exit={{ opacity: 0, height: 0 }}
+      className="mt-4 w-full max-w-[120px] opacity-70"
+    >
+      <svg viewBox="0 -10 100 120" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+        <polyline
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={points.join(' ')}
+        />
+      </svg>
+      <div className="flex justify-between text-[8px] tracking-[0.2em] text-stone-400 mt-1 uppercase">
+        <span>{min}ft</span>
+        <span>{max}ft</span>
+      </div>
+    </motion.div>
+  );
+};
+
+const RegionNode = ({ region, index, onSelect, isEven, isHovered }) => {
   return (
     <div className={`relative flex w-full max-w-5xl py-32 ${isEven ? 'justify-start' : 'justify-end'}`}>
       {/* Node Content */}
@@ -35,6 +74,7 @@ const RegionNode = ({ region, index, onSelect, isEven }) => {
              <p className="text-xs tracking-[0.15em] text-stone-400 mt-2 uppercase max-w-xs leading-relaxed group-hover:text-stone-600 transition-colors duration-500">
                 {region.desc}
              </p>
+             {isHovered && <ElevationProfile elevation={region.elevation} />}
         </div>
       </motion.div>
     </div>
@@ -173,6 +213,7 @@ const MapView = ({ regions, onSelectRegion }) => {
                                 index={index}
                                 onSelect={handleSelect}
                                 isEven={index % 2 === 0}
+                                isHovered={hoveredRegionId === region.id}
                             />
                         </div>
                     ))}
