@@ -43,7 +43,7 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
             transition={{ duration: 1.5 }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-stone-100"
           >
-            <div className="text-[10px] tracking-[0.5em] uppercase text-stone-400">Entering {selectedRegion.name}</div>
+            <div className="text-[10px] tracking-[0.5em] uppercase text-stone-600">Entering {selectedRegion.name}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -84,7 +84,7 @@ const Experience = ({ selectedRegion, onBackToMap }) => {
         className="absolute bottom-12 left-1/2 -translate-x-1/2 pointer-events-none text-center z-10 w-full px-4"
       >
         <h3 className="text-stone-600 text-sm tracking-[0.5em] uppercase font-light">{selectedRegion.name}</h3>
-        <p className="text-stone-400 text-[9px] tracking-[0.3em] uppercase mt-4">{selectedRegion.details}</p>
+        <p className="text-stone-600 text-[9px] tracking-[0.3em] uppercase mt-4">{selectedRegion.details}</p>
       </motion.div>
 
       <AnimatePresence>
