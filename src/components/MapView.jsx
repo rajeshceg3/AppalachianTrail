@@ -33,7 +33,7 @@ const ElevationProfile = ({ elevation }) => {
           points={points.join(' ')}
         />
       </svg>
-      <div className="flex justify-between text-[8px] tracking-[0.2em] text-stone-400 mt-1 uppercase">
+      <div className="flex justify-between text-[8px] tracking-[0.2em] text-stone-600 mt-1 uppercase">
         <span>{min}ft</span>
         <span>{max}ft</span>
       </div>
@@ -71,7 +71,7 @@ const RegionNode = ({ region, index, onSelect, isEven, isHovered }) => {
              <h3 className="text-2xl font-light tracking-[0.2em] uppercase text-stone-600 group-hover:text-stone-900 transition-colors duration-500">
                 {region.name}
              </h3>
-             <p className="text-xs tracking-[0.15em] text-stone-400 mt-2 uppercase max-w-xs leading-relaxed group-hover:text-stone-600 transition-colors duration-500">
+             <p className="text-xs tracking-[0.15em] text-stone-600 mt-2 uppercase max-w-xs leading-relaxed group-hover:text-stone-600 transition-colors duration-500">
                 {region.desc}
              </p>
              {isHovered && <ElevationProfile elevation={region.elevation} />}
@@ -177,7 +177,7 @@ const MapView = ({ regions, onSelectRegion }) => {
                     transition={{ duration: 2 }}
                     className="text-center mb-32 relative z-10"
                 >
-                    <h2 className="text-xs font-light tracking-[0.5em] uppercase text-stone-400">The Path North</h2>
+                    <h2 className="text-xs font-light tracking-[0.5em] uppercase text-stone-600">The Path North</h2>
                     <div className="w-px h-16 bg-stone-300 mx-auto mt-8" />
                 </motion.div>
 
@@ -221,7 +221,7 @@ const MapView = ({ regions, onSelectRegion }) => {
 
                 {/* Footer */}
                 <div className="text-center mt-32">
-                    <div className="text-[10px] tracking-[0.3em] uppercase text-stone-400">Katahdin Awaits</div>
+                    <div className="text-[10px] tracking-[0.3em] uppercase text-stone-600">Katahdin Awaits</div>
                 </div>
             </div>
         </motion.div>

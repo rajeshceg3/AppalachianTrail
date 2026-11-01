@@ -21,7 +21,7 @@ const Landing = ({ onStart }) => {
         >
           <button
             onClick={onStart}
-            className="px-12 py-4 border border-stone-200 rounded-full text-stone-400 hover:text-stone-800 hover:border-stone-400 transition-all duration-1000 ease-in-out cursor-pointer tracking-[0.2em] text-sm uppercase"
+            className="px-12 py-4 border border-stone-200 rounded-full text-stone-600 hover:text-stone-800 hover:border-stone-400 transition-all duration-1000 ease-in-out cursor-pointer tracking-[0.2em] text-sm uppercase"
           >
             Begin
           </button>
@@ -32,7 +32,7 @@ const Landing = ({ onStart }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 3, duration: 2 }}
-        className="absolute bottom-12 text-stone-300 text-[10px] font-light tracking-[0.4em] uppercase"
+        className="absolute bottom-12 text-stone-500 text-[10px] font-light tracking-[0.4em] uppercase"
       >
         A meditative journey
       </motion.div>
