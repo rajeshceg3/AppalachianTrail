@@ -1,2 +1,429 @@
 @import "tailwindcss";
-:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#17372f;background:#f7f4e9;line-height:1.5;font-size:16px}*{box-sizing:border-box}body{margin:0}button,select{font:inherit;font-size:14px;color:var(--text,#17372f);background:var(--surface,#fffdf3);min-height:46px;border:1px solid var(--line,#6d8879);border-radius:12px;padding:10px 14px;cursor:pointer}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #b5812a;outline-offset:3px}a{color:var(--link,#315941);font-size:14px;text-decoration:underline}h1,h2{font:normal 44px/1.1 Georgia,serif;margin:0 0 20px}h2{font-size:30px}.caption{font-size:14px;color:var(--muted,#486054)}.landing{min-height:100dvh;display:grid;grid-template-columns:1fr 1fr;background:#17372f;color:#f8f4e6}.landing section{align-self:center;padding:50px;max-width:650px}.landing h1{font-size:clamp(44px,6vw,76px)}.landing p{margin:14px 0;color:#d4dfd0;font-size:18px}.landing-art{overflow:hidden;position:relative;min-height:30vh;background:linear-gradient(150deg,#a3b9a0,#42634f 55%,#17372f)}.landing-art span{position:absolute;width:120%;height:50%;background:#254d3c;bottom:0;left:-10%;transform:rotate(-15deg);border-radius:50% 50% 0 0}.landing-art span:nth-child(2){background:#587a60;bottom:10%;left:-40%;transform:rotate(20deg)}.landing-art span:nth-child(3){background:#355843;bottom:-10%;left:10%}.landscape-guide{max-width:1100px;margin:auto;padding:48px 32px}.landscape-guide header{max-width:740px;margin-bottom:48px}.landscape-guide section{margin:48px 0}.region-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.region-card{display:flex;text-align:left;gap:14px;padding:20px}.region-card>span:last-child{flex:1}.region-card strong{display:block;font:normal 27px/1.2 Georgia,serif;margin-bottom:6px}.region-card span span{display:block;font-size:15px}.region-number{color:#5d6d52}.region-swatch{height:64px;border-radius:8px;margin-top:16px}.experience{--surface:#12352f;--text:#f8f4e6;--muted:#d0ded0;--line:#839b86;--link:#efd69e;position:relative;width:100%;height:100dvh;overflow:hidden;color:var(--text)}.experience[data-theme=light]{--surface:#fffdf3;--text:#17372f;--muted:#486054;--line:#6d8879;--link:#494c17}.scene-stage{position:absolute;inset:0}.world-toolbar{position:absolute;top:20px;left:20px;right:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;z-index:5}.world-toolbar label{background:var(--surface);padding:10px;border-radius:10px;font-size:14px}.world-toolbar select{font-size:16px;max-width:210px}.region-note{position:absolute;bottom:20px;left:20px;width:420px;max-width:calc(100% - 40px);max-height:36%;overflow:auto;padding:20px 22px;background:var(--surface);border:1px solid var(--line);border-radius:18px}.region-note h1{font-size:32px;margin:0 0 12px}.region-note p{font-size:16px;margin:8px 0}.region-note .caption{font-size:14px}canvas:focus-visible{outline:3px solid #efd69e;outline-offset:-4px}@media(max-width:700px){.landing{display:flex;flex-direction:column}.landing-art{min-height:28vh}.landing section{padding:28px 24px}.landing p{font-size:16px}.landscape-guide{padding:32px 20px}.landscape-guide h1{font-size:38px}.region-grid{grid-template-columns:1fr}.world-toolbar{left:10px;right:10px;top:10px;gap:6px}.world-toolbar label{display:none}.world-toolbar select{flex:1;max-width:none;min-width:140px}.world-toolbar button{padding:9px 10px}.scene-stage{bottom:0}.region-note{left:10px;bottom:10px;max-width:calc(100% - 20px);width:100%;max-height:35%;padding:16px}.region-note h1{font-size:27px}.region-note p{font-size:15px}.region-note .caption{font-size:14px}.keyboard-tip{display:none}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+@font-face {
+  font-family: 'Caveat';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/caveat-latin.woff2') format('woff2');
+}
+
+:root {
+  --paper: #f5efe0;
+  --paper-dim: #ece3cc;
+  --ink: #26200f;
+  --ink-soft: #59503b;
+  --line: #26200f;
+  --blaze: #fdfdf4;
+  --accent: #2e5d34;
+  --accent-deep: #22492a;
+  --ridge-far: #b9c4a2;
+  --ridge-mid: #7d946f;
+  --ridge-near: #45684a;
+  --link: #315941;
+  --muted: #59503b;
+  --focus: #b5812a;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+button, select { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+a { color: var(--link); font-size: 15px; }
+h1, h2 { margin: 0; font-weight: normal; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip: rect(0 0 0 0); clip-path: inset(50%);
+  overflow: hidden; white-space: nowrap;
+}
+
+.wordmark { font-family: 'Caveat', 'Segoe Print', cursive; font-weight: 700; }
+
+/* ---- hand-drawn button system ---------------------------------------- */
+/* irregular radii + hard offset shadow = carved, tactile, pressed by hand */
+.hand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 11px 20px;
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--ink);
+  background: var(--blaze);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px 22px 12px 20px / 20px 12px 22px 14px;
+  box-shadow: 3px 4px 0 var(--ink);
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.hand-btn:active {
+  transform: translate(2.5px, 3.5px);
+  box-shadow: 0.5px 0.5px 0 var(--ink);
+}
+
+.hand-btn--primary {
+  background: var(--accent);
+  color: #f7f2df;
+  font-size: 18px;
+  padding: 14px 30px;
+  border-radius: 20px 12px 22px 14px / 14px 22px 12px 20px;
+}
+.hand-btn--primary .ink-icon { width: 22px; height: 22px; }
+
+.hand-btn--ghost {
+  background: transparent;
+  box-shadow: none;
+  border-style: dashed;
+}
+
+.ink-icon { width: 24px; height: 24px; flex: none; }
+.ink-blaze { width: 20px; height: 60px; flex: none; }
+
+/* carved trail sign (back control, region picker) */
+.hand-sign {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 10px 18px;
+  font-size: 15px;
+  color: #f2e8cf;
+  background: linear-gradient(160deg, #5c4128, #3e2b18);
+  border: 2.5px solid var(--ink);
+  border-radius: 8px 18px 10px 16px / 16px 10px 18px 8px;
+  box-shadow: 3px 4px 0 var(--ink);
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.hand-sign:active { transform: translate(2.5px, 3.5px); box-shadow: 0.5px 0.5px 0 var(--ink); }
+.hand-sign .ink-icon { width: 20px; height: 20px; }
+
+.sign-select { position: relative; }
+.sign-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 40px 10px 16px;
+  font-size: 16px;
+  color: #f2e8cf;
+  background: linear-gradient(160deg, #5c4128, #3e2b18);
+  border: 2.5px solid var(--ink);
+  border-radius: 8px 18px 10px 16px / 16px 10px 18px 8px;
+  box-shadow: 3px 4px 0 var(--ink);
+  max-width: 230px;
+  text-overflow: ellipsis;
+}
+.sign-select::after {
+  content: "";
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  width: 14px;
+  height: 9px;
+  transform: translateY(-55%) rotate(1.5deg);
+  background: currentColor;
+  color: #f2e8cf;
+  clip-path: polygon(2% 8%, 50% 96%, 98% 4%, 82% 0, 50% 62%, 16% 0);
+  pointer-events: none;
+}
+.sign-select option { color: #26200f; background: #f5efe0; }
+
+/* small round ink toggles */
+.ink-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  color: var(--ink);
+  background: var(--blaze);
+  border: 2.5px solid var(--ink);
+  border-radius: 48% 52% 55% 45% / 52% 46% 54% 48%;
+  box-shadow: 2.5px 3px 0 var(--ink);
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ink-toggle:active { transform: translate(2px, 2.5px); box-shadow: 0.5px 0.5px 0 var(--ink); }
+.ink-toggle[aria-pressed="true"] { background: var(--paper-dim); }
+
+/* ---- landing ---------------------------------------------------------- */
+.landing {
+  min-height: 100dvh;
+  display: grid;
+  place-items: start center;
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+}
+.landing-art {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44dvh;
+  z-index: 0;
+  pointer-events: none;
+}
+.ridge-scene { width: 100%; height: 100%; display: block; }
+.landing section {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 40px 28px;
+  margin-top: 16dvh;
+  max-width: 640px;
+}
+.landing h1 {
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: clamp(50px, 12vw, 76px);
+  line-height: 0.98;
+  letter-spacing: 0;
+  margin: 0 0 14px;
+  transform: rotate(-1deg);
+}
+.landing p { margin: 0 0 10px; font-size: 17px; color: var(--ink-soft); max-width: 44ch; }
+.landing .caption { font-size: 14px; color: var(--muted); margin-top: 18px; }
+.landing #begin { margin-top: 10px; }
+
+@media (min-width: 900px) {
+  .landing { grid-template-columns: 1fr 1fr; place-items: center; }
+  .landing section { padding: 60px; }
+  .landing-art { position: relative; height: 100dvh; order: 2; }
+}
+
+/* ---- map: the path north ---------------------------------------------- */
+.landscape-guide { max-width: 880px; margin: auto; padding: 44px 26px 80px; }
+.landscape-guide header { max-width: 60ch; margin-bottom: 34px; }
+.landscape-guide h1 {
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: clamp(44px, 9vw, 64px);
+  line-height: 1;
+  transform: rotate(-1deg);
+  margin-bottom: 12px;
+}
+.landscape-guide header p { font-size: 17px; color: var(--ink-soft); margin: 0 0 14px; }
+.landscape-guide h2 {
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: 32px;
+  margin: 40px 0 6px;
+}
+.landscape-guide section > p { font-size: 15px; color: var(--muted); margin: 0 0 14px; }
+
+/* the trail itself: one dashed line, blazes for stops */
+.trail-journey { list-style: none; margin: 18px 0 0; padding: 0; position: relative; }
+.trail-journey::before {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: 6px;
+  bottom: 6px;
+  border-left: 3px dashed color-mix(in srgb, var(--ink) 62%, transparent);
+}
+.trail-journey li { position: relative; padding: 7px 0 7px 52px; }
+.trail-journey .ink-blaze {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 21px;
+  height: 62px;
+  transform: translateY(-50%) rotate(-1.6deg);
+  color: var(--ink);
+}
+.trail-journey li:nth-child(even) .ink-blaze { transform: translateY(-50%) rotate(2deg); }
+
+.trail-stop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 18px;
+  background: var(--blaze);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px 22px 12px 20px / 20px 12px 22px 14px;
+  box-shadow: 3px 4px 0 var(--ink);
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease;
+}
+.trail-stop:active { transform: translate(2.5px, 3.5px); box-shadow: 0.5px 0.5px 0 var(--ink); }
+.trail-stop strong {
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.05;
+}
+.trail-stop .stop-meta { font-size: 15px; color: var(--ink-soft); }
+
+/* beyond the trail: side paths get blue blazes, like real side trails */
+.side-grid { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.side-stop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--blaze);
+  border: 2.5px solid var(--ink);
+  border-radius: 18px 10px 20px 12px / 12px 20px 10px 18px;
+  box-shadow: 3px 4px 0 var(--ink);
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease;
+}
+.side-stop:active { transform: translate(2.5px, 3.5px); box-shadow: 0.5px 0.5px 0 var(--ink); }
+.side-stop .ink-blaze { width: 15px; height: 45px; }
+.side-stop strong, .side-stop .stop-meta { display: block; }
+.side-stop strong { display: block; font-size: 18px; line-height: 1.2; }
+.side-stop .stop-meta { font-size: 14px; color: var(--ink-soft); }
+
+/* ---- experience -------------------------------------------------------- */
+.experience {
+  --surface: #152a20;
+  --text: #f3ecd9;
+  --muted: #b9c6b4;
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  color: var(--text);
+}
+.experience[data-theme=light] {
+  --surface: var(--paper);
+  --text: var(--ink);
+  --muted: #59503b;
+}
+.scene-stage { position: absolute; inset: 0; }
+
+/* top: sign back to the map, landscape picker, small toggles */
+.world-toolbar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 5;
+}
+.world-toolbar .sign-select { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; }
+.world-toolbar .icon-toggles { display: flex; gap: 9px; flex: none; }
+
+/* bottom: the walk itself - one bright action, quiet helpers */
+.walk-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 5;
+  pointer-events: none;
+}
+.walk-bar > * { pointer-events: auto; }
+.walk-bar .walk-row { display: flex; gap: 12px; align-items: center; }
+.walk-bar .hand-btn--ghost {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--blaze) 90%, transparent);
+  border-color: var(--ink);
+  box-shadow: none;
+}
+.walk-bar .hand-btn--ghost:active { transform: translate(1px, 1px); }
+
+/* chrome retires: the world leads, controls visit when called */
+.chrome { transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s; }
+.chrome:not(.chrome-on) { opacity: 0; visibility: hidden; pointer-events: none; }
+.world-toolbar.chrome:not(.chrome-on) { transform: translateY(-10px); }
+.walk-bar.chrome:not(.chrome-on) { transform: translateY(10px); }
+
+/* the peeking blaze: where the controls live */
+.chrome-hint {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: 2px 18px 8px;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  filter: drop-shadow(0 2px 2px rgba(20, 16, 6, 0.35));
+  animation: hint-sway 3.2s ease-in-out infinite;
+}
+.chrome-hint .ink-blaze { width: 18px; height: 54px; }
+@keyframes hint-sway {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(4px); }
+}
+
+/* trail register page: what this place is */
+.region-note {
+  position: absolute;
+  left: 14px;
+  bottom: calc(132px + env(safe-area-inset-bottom));
+  width: 400px;
+  max-width: calc(100% - 28px);
+  max-height: 34%;
+  overflow: auto;
+  padding: 18px 22px 14px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: 6px 22px 10px 24px / 24px 10px 22px 6px;
+  box-shadow: 4px 5px 0 color-mix(in srgb, var(--ink) 85%, transparent);
+  transform: rotate(-0.6deg);
+}
+.region-note h1 {
+  display: inline-block;
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.05;
+  margin: 0 0 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 9' preserveAspectRatio='none'%3E%3Cpath d='M2 6 C 40 2, 80 7, 120 4 C 150 2, 180 6, 198 4' fill='none' stroke='%232e5d34' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") left bottom / 100% 9px no-repeat;
+  padding-bottom: 7px;
+}
+.region-note p { font-size: 16px; margin: 8px 0; }
+.region-note .caption { font-size: 14px; color: var(--muted); }
+.region-note a { font-size: 14px; }
+
+canvas:focus-visible { outline: 3px solid #efd69e; outline-offset: -4px; }
+
+@media (min-width: 900px) {
+  .world-toolbar { top: 20px; left: 20px; right: 20px; gap: 12px; }
+  .region-note { left: 20px; bottom: 20px; max-height: 40%; }
+  .walk-bar { bottom: 24px; }
+}
+
+@media (max-width: 560px) {
+  .world-toolbar { flex-wrap: wrap; }
+  .world-toolbar .sign-select { order: 3; flex-basis: 100%; }
+  .world-toolbar .sign-select select { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
