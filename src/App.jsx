@@ -13,6 +13,7 @@ function App() {
     if (region) {
       setSelectedRegion(region);
       setStage('experience');
+      window.scrollTo(0,0);
     }
   };
 
@@ -20,7 +21,7 @@ function App() {
     <div className="w-full min-h-screen relative bg-stone-50">
       {stage === 'landing' && <Landing onStart={() => setStage('map')} />}
       {stage === 'map' && <MapView regions={regions} onSelectRegion={handleSelectRegion} />}
-      {stage === 'experience' && <Experience selectedRegion={selectedRegion} onBackToMap={() => setStage('map')} />}
+      {stage === 'experience' && <Experience selectedRegion={selectedRegion} onBackToMap={() => {setStage('map');window.scrollTo(0,0)}} />}
     </div>
   );
 }

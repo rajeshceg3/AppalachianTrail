@@ -7,16 +7,16 @@ import { applyWindShader } from '../materials/WindShader';
 
 const GroundClutter = ({ region }) => {
   // Config based on region
-  const grassCount = region.environment === 'forest' ? 8000 : 3000;
-  const pebbleCount = 800;
-  const range = 1200; // Match terrain range
+  const grassCount = region.environment === 'forest' ? 1200 : 600;
+  const pebbleCount = 200;
+  const range = 320; // Match terrain range
 
   // 1. Grass Material (Wind Shader)
   const grassMaterial = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({
-      color: region.treeColor1 || '#4a6741',
+      color: "#86916a",
       roughness: 0.8,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide, emissive: "#39412d", emissiveIntensity: .25
     });
     // Stronger sway for grass
     applyWindShader(m, 1.5, 0.3);
@@ -24,7 +24,7 @@ const GroundClutter = ({ region }) => {
   }, [region.treeColor1]);
 
   useFrame((state) => {
-    const time = state.clock.elapsedTime;
+    const time = region.paused ? 0 : state.clock.elapsedTime;
     if (grassMaterial.userData.update) grassMaterial.userData.update(time);
   });
 
@@ -103,7 +103,7 @@ const GroundClutter = ({ region }) => {
   return (
     <group>
       {/* Grass Instances */}
-      <Instances range={grassData.length} material={grassMaterial} geometry={grassGeometry}>
+      <Instances limit={grassData.length} range={grassData.length} material={grassMaterial} geometry={grassGeometry}>
         {grassData.map((d, i) => (
         <Instance
             key={`grass-${i}`}
@@ -116,7 +116,7 @@ const GroundClutter = ({ region }) => {
       </Instances>
 
       {/* Pebble Instances */}
-      <Instances range={pebbleData.length} geometry={pebbleGeometry}>
+      <Instances limit={pebbleData.length} range={pebbleData.length} geometry={pebbleGeometry}>
         <meshStandardMaterial color="#555555" roughness={0.9} />
         {pebbleData.map((d, i) => (
           <Instance

@@ -39,7 +39,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
   }, [speed, amp]);
 
   useFrame((state) => {
-    const time = state.clock.elapsedTime;
+    const time = region.paused ? 0 : state.clock.elapsedTime;
 
     if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time);
     if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time);
@@ -49,7 +49,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
   return (
     <group>
       {/* Trunks - Static */}
-      <Instances range={data.length}>
+      <Instances limit={Math.max(1,data.length)} range={data.length}>
         <cylinderGeometry args={[0.15, 0.25, 1, 5]} />
         <meshStandardMaterial color="#5c4033" roughness={0.9} />
         {data.map((d, i) => (
@@ -67,8 +67,8 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
       </Instances>
 
       {/* Foliage Bottom Layer - Wide Branches */}
-      <Instances range={data.length} material={foliageMaterial1}>
-        <dodecahedronGeometry args={[1.5, 0]} />
+      <Instances limit={Math.max(1,data.length)} range={data.length} material={foliageMaterial1}>
+        <coneGeometry args={[1.3, 2.6, 8]} />
         {data.map((d, i) => (
         <Instance
             key={`fol1-${i}`}
@@ -77,7 +77,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
               d.position[1] + 1.2 * d.scale,
               d.position[2] + 1.2 * d.scale * d.tiltX
             ]}
-            scale={[d.scale * 1.2, d.scale * 0.5, d.scale * 1.2]}
+            scale={[d.scale * 1.2, d.scale * .85, d.scale * 1.2]}
             rotation={[d.tiltX, d.rotation, d.tiltZ]}
             color={d.color1}
         />
@@ -85,8 +85,8 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
       </Instances>
 
       {/* Foliage Middle Layer - Medium Branches */}
-      <Instances range={data.length} material={foliageMaterial2}>
-        <dodecahedronGeometry args={[1.1, 0]} />
+      <Instances limit={Math.max(1,data.length)} range={data.length} material={foliageMaterial2}>
+        <coneGeometry args={[1, 2.5, 8]} />
         {data.map((d, i) => (
         <Instance
             key={`fol2-${i}`}
@@ -95,7 +95,7 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
               d.position[1] + 2.2 * d.scale,
               d.position[2] + 2.2 * d.scale * d.tiltX
             ]}
-            scale={[d.scale * 1.0, d.scale * 0.6, d.scale * 1.0]}
+            scale={[d.scale * 1.0, d.scale * .85, d.scale * 1.0]}
             rotation={[d.tiltX, d.rotation + 1, d.tiltZ]}
             color={d.color2}
         />
@@ -103,8 +103,8 @@ const TreeCluster = ({ data, region, swaySpeed }) => {
       </Instances>
 
       {/* Foliage Top Layer - Top Cone/Branches */}
-      <Instances range={data.length} material={foliageMaterial3}>
-        <dodecahedronGeometry args={[0.8, 0]} />
+      <Instances limit={Math.max(1,data.length)} range={data.length} material={foliageMaterial3}>
+        <coneGeometry args={[.7, 2.2, 8]} />
         {data.map((d, i) => (
         <Instance
             key={`fol3-${i}`}
@@ -141,7 +141,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
   }, [speed, amp]);
 
   useFrame((state) => {
-    const time = state.clock.elapsedTime;
+    const time = region.paused ? 0 : state.clock.elapsedTime;
     if (foliageMaterial1.userData.update) foliageMaterial1.userData.update(time);
     if (foliageMaterial2.userData.update) foliageMaterial2.userData.update(time);
   });
@@ -149,7 +149,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
   return (
     <group>
       {/* Trunks - Stouter */}
-      <Instances range={data.length}>
+      <Instances limit={Math.max(1,data.length)} range={data.length}>
         <cylinderGeometry args={[0.2, 0.3, 1.5, 6]} />
         <meshStandardMaterial color="#5c4033" roughness={0.9} />
         {data.map((d, i) => (
@@ -167,7 +167,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
       </Instances>
 
       {/* Foliage Main Clump */}
-      <Instances range={data.length} material={foliageMaterial1}>
+      <Instances limit={Math.max(1,data.length)} range={data.length} material={foliageMaterial1}>
         <icosahedronGeometry args={[1.5, 0]} />
         {data.map((d, i) => (
         <Instance
@@ -185,7 +185,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
       </Instances>
 
       {/* Foliage Top Clump */}
-      <Instances range={data.length} material={foliageMaterial2}>
+      <Instances limit={Math.max(1,data.length)} range={data.length} material={foliageMaterial2}>
         <icosahedronGeometry args={[1.0, 0]} />
         {data.map((d, i) => (
         <Instance
@@ -207,7 +207,7 @@ const BroadleafCluster = ({ data, region, swaySpeed }) => {
 
 const Vegetation = ({ region }) => {
   // Increased tree count for larger terrain (1200x1200)
-  const baseCount = region.environment === 'forest' ? 8000 : 3000;
+  const baseCount = region.environment === 'forest' ? 1400 : 700;
 
   // Apply vegetationParams multipliers
   const vegParams = region.vegetationParams || { density: 1.0, coniferRatio: 0.7 };
@@ -228,20 +228,20 @@ const Vegetation = ({ region }) => {
     while ((conifer.length + broadleaf.length) < treeCount && attempts < maxAttempts) {
       attempts++;
 
-      const z = (rng() - 0.5) * 1200;
-      const x = (rng() - 0.5) * 1200;
+      const z = (rng() - 0.5) * 320;
+      const x = (rng() - 0.5) * 320;
 
       const noiseVal = noise2D(x * 0.03, z * 0.03);
 
       // Soft probability ramp instead of hard threshold
       // Transition from 0 to 1 between noise -0.4 and 0.1
-      const noiseProb = THREE.MathUtils.smoothstep(-0.4, 0.1, noiseVal);
+      const noiseProb = THREE.MathUtils.smoothstep(noiseVal, -0.4, 0.1);
 
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
 
       // Soft clearing around path (4.0 to 8.0 units)
-      const pathProb = THREE.MathUtils.smoothstep(4.0, 8.0, dist);
+      const pathProb = THREE.MathUtils.smoothstep(dist, 4.0, 8.0);
 
       let placementProb = noiseProb * pathProb;
 
@@ -288,7 +288,7 @@ const Vegetation = ({ region }) => {
               c2.lerp(winterColor, 0.9);
               finalScale *= 0.5; // Bare trees look smaller
           } else if (vegParams.season === 'spring' && !isConifer) {
-              const springColor = new THREE.Color('#4ade80');
+              const springColor = new THREE.Color('#719958');
               c1.lerp(springColor, 0.6);
               c2.lerp(springColor, 0.6);
           }

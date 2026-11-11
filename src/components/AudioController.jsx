@@ -185,6 +185,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioContext();
     audioContextRef.current = ctx;
+    ctx.resume().catch(() => {});
 
     // --- Convolution Reverb Setup ---
     const convolver = ctx.createConvolver();

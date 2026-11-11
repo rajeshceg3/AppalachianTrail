@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import { getTerrainHeight, getPathX, noise2D } from '../utils/terrain';
 import { generateHeightMap, generateNormalMap } from '../utils/textureGenerator';
 
-const terrainArgsHigh = [1200, 1200, 256, 256]; // High detail for close range
-const terrainArgsLow = [1200, 1200, 64, 64];   // Low detail for far range
+const terrainArgsHigh = [500, 500, 256, 256]; // High detail for close range
+const terrainArgsLow = [500, 500, 256, 256];   // Low detail for far range
 
 const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, baseColor }, ref) => {
   const meshRef = useRef();
@@ -75,21 +75,21 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
 
       const pathX = getPathX(-y);
       const distToPath = Math.abs(x - pathX);
-      const pathBlend = 1.0 - THREE.MathUtils.smoothstep(1.5, 4.0, distToPath);
+      const pathBlend = 1.0 - THREE.MathUtils.smoothstep(distToPath, 1.5, 4.0);
       c.lerp(dirtColor, pathBlend * 0.8);
 
       const thresholdNoise = n * 0.15;
       const rockThresholdStart = 0.5 + thresholdNoise;
       const rockThresholdEnd = 0.85 + thresholdNoise;
-      const rockFactor = 1.0 - THREE.MathUtils.smoothstep(rockThresholdStart, rockThresholdEnd, slope);
+      const rockFactor = 1.0 - THREE.MathUtils.smoothstep(slope, rockThresholdStart, rockThresholdEnd);
       c.lerp(darkRock, rockFactor * 0.8);
 
-      const peakFactor = THREE.MathUtils.smoothstep(35, 60, h);
+      const peakFactor = THREE.MathUtils.smoothstep(h, 35, 60);
       c.lerp(highPeak, peakFactor * 0.4);
 
       if (terrainParams.scree) {
           if (slope < 0.7 && h > 30) {
-               const screeFactor = 1.0 - THREE.MathUtils.smoothstep(0.4, 0.7, slope);
+               const screeFactor = 1.0 - THREE.MathUtils.smoothstep(slope, 0.4, 0.7);
                c.lerp(screeColor, screeFactor * 0.9);
           }
       }
@@ -97,13 +97,13 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
       if (terrainParams.snowLine) {
           const snowThreshold = terrainParams.snowLine + n * 3.0;
           if (h > snowThreshold) {
-               const snowFactor = THREE.MathUtils.smoothstep(snowThreshold, snowThreshold + 10, h);
+               const snowFactor = THREE.MathUtils.smoothstep(h, snowThreshold, snowThreshold + 10);
                c.lerp(snowColor, snowFactor * 0.95);
           }
       }
 
       if (terrainParams.coastal) {
-          const sandFactor = 1.0 - THREE.MathUtils.smoothstep(baseHeight, baseHeight + 3.0, h);
+          const sandFactor = 1.0 - THREE.MathUtils.smoothstep(h, baseHeight, baseHeight + 3.0);
           c.lerp(sandColor, sandFactor);
       }
 
@@ -117,7 +117,7 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
       if (terrainParams.pollution) {
           const polNoise = noise2D(x * 0.3, -y * 0.3);
           if (polNoise > 0.4) {
-              const polFactor = THREE.MathUtils.smoothstep(0.4, 0.7, polNoise);
+              const polFactor = THREE.MathUtils.smoothstep(polNoise, 0.4, 0.7);
               c.lerp(pollutionColor, polFactor * 0.8);
           }
       }
@@ -125,7 +125,7 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
       if (terrainParams.radiation) {
           const radNoise = noise2D(x * 0.2, -y * 0.2);
           if (radNoise > 0.6) {
-              const radFactor = THREE.MathUtils.smoothstep(0.6, 0.9, radNoise);
+              const radFactor = THREE.MathUtils.smoothstep(radNoise, 0.6, 0.9);
               c.lerp(radiationColor, radFactor * 0.6);
           }
       }
@@ -150,7 +150,7 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
       if (terrainParams.caves) {
           const caveNoise = noise2D(x * 0.03, -y * 0.03);
           if (caveNoise > 0.6) {
-              const sinkholeFactor = THREE.MathUtils.smoothstep(0.6, 1.0, caveNoise);
+              const sinkholeFactor = THREE.MathUtils.smoothstep(caveNoise, 0.6, 1.0);
               c.lerp(caveDarkness, sinkholeFactor * 0.9);
           }
       }
@@ -185,7 +185,7 @@ const TerrainMesh = forwardRef(({ color, region, args, roughnessMap, normalMap, 
       if (terrainParams.ancientRuins) {
           const ruinNoise = noise2D(x * 0.05, -y * 0.05);
           if (ruinNoise > 0.3) {
-              const ruinFactor = THREE.MathUtils.smoothstep(0.3, 0.6, ruinNoise);
+              const ruinFactor = THREE.MathUtils.smoothstep(ruinNoise, 0.3, 0.6);
               c.lerp(ancientRuinColor, ruinFactor * 0.85);
           }
       }

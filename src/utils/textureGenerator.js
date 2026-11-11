@@ -230,7 +230,7 @@ export function generateAlphaMap(width = 512, height = 512) {
       // 1.0 if dist < threshold, fading to 0.0
 
       const edgeWidth = 0.1; // Width of the fade
-      let alpha = 1.0 - THREE.MathUtils.smoothstep(threshold - edgeWidth, threshold + edgeWidth, dist);
+      let alpha = 1.0 - THREE.MathUtils.smoothstep(dist, threshold - edgeWidth, threshold + edgeWidth);
 
       const val = Math.floor(alpha * 255);
 
