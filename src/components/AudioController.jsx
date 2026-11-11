@@ -5,6 +5,7 @@ import { getWindGustFactor } from '../utils/wind';
 
 const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) => {
   const audioContextRef = useRef(null);
+  const masterRef = useRef(null);
   const { camera } = useThree(); // Access camera for height-based modulation
 
   // Stereo wind references
@@ -91,7 +92,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     const panner = ctx.createStereoPanner();
     panner.pan.value = (Math.random() - 0.5) * 0.3;
 
-    src.connect(filter).connect(gain).connect(panner).connect(ctx.destination);
+    src.connect(filter).connect(gain).connect(panner).connect(masterRef.current);
     // Minimal reverb for gear (close to body)
     if (reverbRef.current) {
         const gearRevGain = ctx.createGain();
@@ -132,7 +133,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     }
 
     thudOsc.connect(thudGain);
-    thudGain.connect(ctx.destination);
+    thudGain.connect(masterRef.current);
 
     thudOsc.start(t);
     thudOsc.stop(t + 0.2);
@@ -169,7 +170,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     const crunchPanner = ctx.createStereoPanner();
     crunchPanner.pan.value = (Math.random() - 0.5) * 0.2;
 
-    crunchSrc.connect(crunchFilter).connect(crunchGain).connect(crunchPanner).connect(ctx.destination);
+    crunchSrc.connect(crunchFilter).connect(crunchGain).connect(crunchPanner).connect(masterRef.current);
 
     // Send footsteps to reverb
     if (reverbRef.current) {
@@ -185,6 +186,12 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioContext();
     audioContextRef.current = ctx;
+    // Master bus: single tap point for the whole trail soundscape.
+    const master = ctx.createGain();
+    master.gain.value = 1;
+    master.connect(ctx.destination);
+    masterRef.current = master;
+    window.__soundscape = { context: ctx, master };
     ctx.resume().catch(() => {});
 
     // --- Convolution Reverb Setup ---
@@ -213,7 +220,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     convolver.buffer = irBuffer;
 
     // Route reverb to destination
-    convolver.connect(reverbGain).connect(ctx.destination);
+    convolver.connect(reverbGain).connect(masterRef.current);
     reverbRef.current = convolver;
 
 
@@ -255,7 +262,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
         const panner = ctx.createStereoPanner();
         panner.pan.value = pan;
 
-        src.connect(filter).connect(gain).connect(panner).connect(ctx.destination);
+        src.connect(filter).connect(gain).connect(panner).connect(masterRef.current);
         // Send wind to reverb (subtle)
         const send = ctx.createGain();
         send.gain.value = 0.2;
@@ -270,27 +277,34 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     windLRef.current = createWindLayer(-0.6);
     windRRef.current = createWindLayer(0.6);
 
-    // Drone Layer (Atmospheric Tonal Center)
-    const droneOsc = ctx.createOscillator();
-    droneOsc.type = 'triangle'; // Richer than sine
-    // Frequency based on region type? Initial default.
-    droneOsc.frequency.value = 55;
+    // Depth bed (atmospheric weight of the valley): unpitched low air, not a
+    // pitched tone. Brown-noise loop through a region-tuned lowpass.
+    const depthBuffer = ctx.createBuffer(1, ctx.sampleRate * 6, ctx.sampleRate);
+    const depthData = depthBuffer.getChannelData(0);
+    let depthLast = 0;
+    for (let i = 0; i < depthData.length; i++) {
+      depthLast = (depthLast + (Math.random() * 0.14 - 0.07)) / 1.02;
+      depthData[i] = depthLast * 3;
+    }
+    const depthSrc = ctx.createBufferSource();
+    depthSrc.buffer = depthBuffer;
+    depthSrc.loop = true;
 
     const droneFilter = ctx.createBiquadFilter();
     droneFilter.type = 'lowpass';
-    droneFilter.frequency.value = 120; // Dark tone
+    droneFilter.frequency.value = 100; // Dark wash
 
     const droneGain = ctx.createGain();
     droneGain.gain.value = 0.0;
 
-    droneOsc.connect(droneFilter).connect(droneGain).connect(ctx.destination);
-    // Send drone to reverb for huge space
+    depthSrc.connect(droneFilter).connect(droneGain).connect(masterRef.current);
+    // Send the bed to reverb for huge space
     const droneSend = ctx.createGain();
     droneSend.gain.value = 0.5;
     droneGain.connect(droneSend).connect(convolver);
 
-    droneOsc.start();
-    droneRef.current = { osc: droneOsc, filter: droneFilter, gain: droneGain };
+    depthSrc.start();
+    droneRef.current = { src: depthSrc, filter: droneFilter, gain: droneGain };
 
     // Rustle Sound Setup (Leaves/Trees) - "Canopy Layer"
     // Use stereo width but centered logic
@@ -315,7 +329,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
         const panner = ctx.createStereoPanner();
         panner.pan.value = 0;
 
-        src.connect(highPass).connect(lowPass).connect(gain).connect(panner).connect(ctx.destination);
+        src.connect(highPass).connect(lowPass).connect(gain).connect(panner).connect(masterRef.current);
         // Send rustle to reverb
         const send = ctx.createGain();
         send.gain.value = 0.3;
@@ -340,7 +354,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     const insectGain = ctx.createGain();
     insectGain.gain.value = 0.0;
 
-    insectSource.connect(insectFilter).connect(insectGain).connect(ctx.destination);
+    insectSource.connect(insectFilter).connect(insectGain).connect(masterRef.current);
     // Insects reverb
     const insectSend = ctx.createGain();
     insectSend.gain.value = 0.2;
@@ -378,7 +392,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     const waterPanner = ctx.createStereoPanner();
     waterPanner.pan.value = (Math.random() - 0.5) * 0.6;
 
-    waterSrc.connect(waterFilter).connect(waterGain).connect(waterPanner).connect(ctx.destination);
+    waterSrc.connect(waterFilter).connect(waterGain).connect(waterPanner).connect(masterRef.current);
 
     // Send water to reverb
     const waterSend = ctx.createGain();
@@ -400,7 +414,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     const bassGain = ctx.createGain();
     bassGain.gain.value = 0.0;
 
-    bassSrc.connect(bassFilter).connect(bassGain).connect(ctx.destination);
+    bassSrc.connect(bassFilter).connect(bassGain).connect(masterRef.current);
     bassSrc.start();
     windBassRef.current = bassGain;
 
@@ -448,7 +462,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
     mixer.connect(breathCycleGain.gain);
 
     // Signal Path: Source -> Filter -> CycleGain -> MasterGain -> Destination
-    breathSrc.connect(breathFilter).connect(breathCycleGain).connect(breathGain).connect(ctx.destination);
+    breathSrc.connect(breathFilter).connect(breathCycleGain).connect(breathGain).connect(masterRef.current);
 
     // Internal resonance (Reverb)
     const breathReverbSend = ctx.createGain();
@@ -469,7 +483,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
       try {
         windLRef.current?.src.stop();
         windRRef.current?.src.stop();
-        droneOsc.stop();
+        depthSrc.stop();
         insectSource.stop();
         waterSrc.stop();
         waterLFO.stop();
@@ -478,6 +492,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
         breathLfo.stop();
         bias.stop();
         ctx.close();
+        if (window.__soundscape && window.__soundscape.context === ctx) delete window.__soundscape;
       } catch (e) {}
       setIsReady(false);
     };
@@ -519,12 +534,12 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
       // cloudFactor is approx -0.6 to 0.6
       const sunMod = THREE.MathUtils.mapLinear(cloudFactor, -0.6, 0.6, 0.5, 1.0);
 
-      // Update Drone
+      // Update depth bed
       if (droneRef.current) {
-          const droneBase = enabled ? 0.03 : 0;
-          // Deeper drone for mountains/high wind
-          const targetFreq = region.environment === 'sunset' ? 65 : (region.environment === 'forest' ? 55 : 45);
-          droneRef.current.osc.frequency.setTargetAtTime(targetFreq, now, 0.5);
+          const droneBase = enabled ? 0.05 : 0;
+          // Darker wash for mountains/high wind
+          const targetCutoff = region.environment === 'sunset' ? 110 : (region.environment === 'forest' ? 90 : 70);
+          droneRef.current.filter.frequency.setTargetAtTime(targetCutoff, now, 0.5);
           droneRef.current.gain.gain.setTargetAtTime(droneBase * sunMod, now, 1.0);
       }
 
@@ -653,7 +668,7 @@ const AudioController = forwardRef(({ region, enabled = true, windRef }, ref) =>
           osc.connect(distFilter);
           distFilter.connect(gain);
           gain.connect(panner);
-          panner.connect(ctx.destination);
+          panner.connect(masterRef.current);
 
           if (reverbRef.current) {
               // Birds get lots of reverb (far away)
