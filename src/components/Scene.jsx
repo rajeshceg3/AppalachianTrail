@@ -288,7 +288,7 @@ const Scene = ({ region, audioEnabled, reset, walk }) => {
       {audioEnabled && <AudioController ref={audioRef} region={region} enabled={true} windRef={windRef} />}
       <FrameCadence region={region} active={!region.paused||audioEnabled}/><Controls region={region} reset={reset} walk={walk}/>
       <fogExp2 ref={fogRef} attach="fog" args={[region.fogColor, Math.min(region.fogDensity,.005)]} />
-      
+
 
       {/* Lighting */}
       <ambientLight intensity={.65} />
