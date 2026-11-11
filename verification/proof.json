@@ -1,0 +1,317 @@
+[
+  {
+    "name": "1440-paused-dark-georgia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-smokies",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 262,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-virginia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-mid-atlantic",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 238,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-new-england",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-maine",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-moab",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-nyc",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-acadia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-feywood",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "1440-paused-dark-wasteland",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 214,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-georgia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 220,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-smokies",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 267,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-virginia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 220,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-mid-atlantic",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 220,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-new-england",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 220,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-maine",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 220,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-moab",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 198,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-nyc",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 220,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-acadia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 198,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-feywood",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 198,
+    "errors": []
+  },
+  {
+    "name": "320-paused-dark-wasteland",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 198,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-georgia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-smokies",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 223,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-virginia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-mid-atlantic",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 199,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-new-england",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-maine",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-moab",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-nyc",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-acadia",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-feywood",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-motion-light-wasteland",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  },
+  {
+    "name": "390-paused-dark-mid-atlantic",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 199,
+    "errors": []
+  },
+  {
+    "name": "390-paused-dark-feywood",
+    "drag": true,
+    "reset": true,
+    "overflow": false,
+    "minFont": 14,
+    "noteH": 177,
+    "errors": []
+  }
+]

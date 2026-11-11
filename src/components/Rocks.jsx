@@ -15,7 +15,7 @@ const hashCode = (s) => {
 
 const Rocks = ({ region }) => {
   const geoParams = region.geologyParams || { rockCount: 1.0, hasMinerals: false };
-  const baseRockCount = 1200;
+  const baseRockCount = 180;
   const rockCount = Math.floor(baseRockCount * geoParams.rockCount);
   const pebbleCount = rockCount * 3; // More pebbles
   const mineralCount = geoParams.hasMinerals ? 200 : 0;
@@ -46,20 +46,20 @@ const Rocks = ({ region }) => {
     while (rocks.length < rockCount && attempts < maxAttempts) {
       attempts++;
 
-      const z = (rng() - 0.5) * 1200;
-      const x = (rng() - 0.5) * 1200;
+      const z = (rng() - 0.5) * 320;
+      const x = (rng() - 0.5) * 320;
 
       // Noise clustering
       const noiseVal = noise2D(x * 0.1, z * 0.1);
 
       // Soft probability ramp (transition -0.3 to 0.2)
-      const noiseProb = THREE.MathUtils.smoothstep(-0.3, 0.2, noiseVal);
+      const noiseProb = THREE.MathUtils.smoothstep(noiseVal, -0.3, 0.2);
 
       const pathX = getPathX(z);
       const dist = Math.abs(x - pathX);
 
       // Soft clearing around path (2.5 to 5.0 units)
-      const pathProb = THREE.MathUtils.smoothstep(2.5, 5.0, dist);
+      const pathProb = THREE.MathUtils.smoothstep(dist, 2.5, 5.0);
 
       const finalProb = noiseProb * pathProb;
 
@@ -95,20 +95,20 @@ const Rocks = ({ region }) => {
     attempts = 0;
     while (pebbles.length < pebbleCount && attempts < maxAttempts) {
         attempts++;
-        const z = (rng() - 0.5) * 1200;
-        const x = (rng() - 0.5) * 1200;
+        const z = (rng() - 0.5) * 320;
+        const x = (rng() - 0.5) * 320;
 
         // Less strict clustering
         const noiseVal = noise2D(x * 0.15, z * 0.15);
 
         // Soft probability ramp (-0.4 to 0.0)
-        const noiseProb = THREE.MathUtils.smoothstep(-0.4, 0.0, noiseVal);
+        const noiseProb = THREE.MathUtils.smoothstep(noiseVal, -0.4, 0.0);
 
         const pathX = getPathX(z);
         const dist = Math.abs(x - pathX);
 
         // Soft clearing around path (1.5 to 3.5 units) - pebbles can be closer
-        const pathProb = THREE.MathUtils.smoothstep(1.5, 3.5, dist);
+        const pathProb = THREE.MathUtils.smoothstep(dist, 1.5, 3.5);
 
         const finalProb = noiseProb * pathProb;
 
@@ -132,15 +132,15 @@ const Rocks = ({ region }) => {
     attempts = 0;
     while (minerals.length < mineralCount && attempts < maxAttempts) {
         attempts++;
-        const z = (rng() - 0.5) * 1200;
-        const x = (rng() - 0.5) * 1200;
+        const z = (rng() - 0.5) * 320;
+        const x = (rng() - 0.5) * 320;
 
         const noiseVal = noise2D(x * 0.2, z * 0.2); // Tighter clusters for crystals
-        const noiseProb = THREE.MathUtils.smoothstep(-0.2, 0.4, noiseVal);
+        const noiseProb = THREE.MathUtils.smoothstep(noiseVal, -0.2, 0.4);
 
         const pathX = getPathX(z);
         const dist = Math.abs(x - pathX);
-        const pathProb = THREE.MathUtils.smoothstep(1.5, 5.0, dist); // Can be closer to path
+        const pathProb = THREE.MathUtils.smoothstep(dist, 1.5, 5.0); // Can be closer to path
 
         const finalProb = noiseProb * pathProb;
 
@@ -172,8 +172,8 @@ const Rocks = ({ region }) => {
     attempts = 0;
     while (logs.length < logCount && attempts < maxAttempts) {
         attempts++;
-        const z = (rng() - 0.5) * 1200;
-        const x = (rng() - 0.5) * 1200;
+        const z = (rng() - 0.5) * 320;
+        const x = (rng() - 0.5) * 320;
 
         const pathX = getPathX(z);
         const dist = Math.abs(x - pathX);
@@ -203,8 +203,8 @@ const Rocks = ({ region }) => {
     attempts = 0;
     while (driftwood.length < driftwoodCount && attempts < maxAttempts) {
         attempts++;
-        const z = (rng() - 0.5) * 1200;
-        const x = (rng() - 0.5) * 1200;
+        const z = (rng() - 0.5) * 320;
+        const x = (rng() - 0.5) * 320;
 
         const y = getTerrainHeight(x, z, region.terrainParams);
         const seaLevel = region.terrainParams.baseHeight || 0;
@@ -237,8 +237,8 @@ const Rocks = ({ region }) => {
     attempts = 0;
     while (debris.length < debrisCount && attempts < maxAttempts) {
         attempts++;
-        const z = (rng() - 0.5) * 1200;
-        const x = (rng() - 0.5) * 1200;
+        const z = (rng() - 0.5) * 320;
+        const x = (rng() - 0.5) * 320;
 
         const pathX = getPathX(z);
         const dist = Math.abs(x - pathX);
@@ -290,8 +290,8 @@ const Rocks = ({ region }) => {
     attempts = 0;
     while (utilityLines.length < utilityLineCount && attempts < maxAttempts) {
         attempts++;
-        const z = (rng() - 0.5) * 1200;
-        const x = (rng() - 0.5) * 1200;
+        const z = (rng() - 0.5) * 320;
+        const x = (rng() - 0.5) * 320;
 
         const baseScale = 0.5 + rng() * 0.5;
         const scale = [

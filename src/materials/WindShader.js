@@ -10,7 +10,7 @@ export function applyWindShader(material, swaySpeed = 1.0, swayAmount = 0.1) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = { value: 0 };
     shader.uniforms.uSwaySpeed = { value: swaySpeed };
-    shader.uniforms.uSwayAmount = { value: swayAmount };
+    shader.uniforms.uSwayAmount = { value: Math.min(swayAmount,.035) };
 
     // Inject uniforms
     shader.vertexShader = `

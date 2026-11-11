@@ -147,7 +147,7 @@ export const regions = [
     id: 'smokies',
     name: 'The Smokies',
     desc: 'Misty Highlands',
-    details: 'Clingmans Dome. A sea of blue ridges fading into the ancient breath of the mountains.',
+    details: 'Kuwohi (formerly Clingmans Dome). A sea of blue ridges fading into the ancient breath of the mountains.',
     color: '#dbeafe', // Blueish white
     fogColor: '#bfdbfe', // Light blue fog
     fogDensity: 0.014,

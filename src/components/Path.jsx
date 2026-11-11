@@ -47,7 +47,7 @@ const Path = ({ color, region }) => {
       points.push(new THREE.Vector3(x, y, z));
     }
     return new THREE.CatmullRomCurve3(points);
-  }, []);
+  }, [region.id]);
 
   const geometry = useMemo(() => {
       // Create a ribbon geometry by expanding the path points
@@ -89,8 +89,8 @@ const Path = ({ color, region }) => {
 
         // Snap to terrain height to prevent floating/clipping
         // We use the calculated X/Z but sample the exact ground height
-        const leftY = getTerrainHeight(left.x, left.z, region?.terrainParams) + 0.02;
-        const rightY = getTerrainHeight(right.x, right.z, region?.terrainParams) + 0.02;
+        const leftY = getTerrainHeight(left.x, left.z, region?.terrainParams) + 0.18;
+        const rightY = getTerrainHeight(right.x, right.z, region?.terrainParams) + 0.18;
 
         vertices.push(left.x, leftY, left.z);
         vertices.push(right.x, rightY, right.z);

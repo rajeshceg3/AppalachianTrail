@@ -1,19 +1,19 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { SoftShadows } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, Noise, DepthOfField, GodRays } from '@react-three/postprocessing';
-import Controls from './Controls';
+import Controls from './ExploreControls';
 import Terrain from './Terrain';
 import Path from './Path';
 import AudioController from './AudioController';
 import Vegetation from './Vegetation';
 import Rocks from './Rocks';
 import GroundClutter from './GroundClutter';
-import { getTerrainHeight } from '../utils/terrain';
+import { getTerrainHeight, getPathX } from '../utils/terrain';
 import { getWindGustFactor } from '../utils/wind';
 
-const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200, speedMultiplier = 1.0, additive = false }) => {
+const AtmosphericParticles = ({ paused, color, type = 'dust', count = 160, range = 200, speedMultiplier = 1.0, additive = false }) => {
   const meshRef = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
@@ -46,7 +46,7 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200,
   }, [count]);
 
   useFrame((state) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || paused) return;
     const time = state.clock.elapsedTime;
     const camPos = state.camera.position;
 
@@ -170,7 +170,8 @@ const AtmosphericParticles = ({ color, type = 'dust', count = 2000, range = 200,
   );
 };
 
-const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
+function FrameCadence({region,active}){const {gl,invalidate}=useThree();useEffect(()=>{gl.shadowMap.autoUpdate=false;gl.shadowMap.needsUpdate=true;let n=0;const t=setInterval(()=>{invalidate();if(++n>12)clearInterval(t)},70);return()=>clearInterval(t)},[region.id,gl,invalidate]);useEffect(()=>{if(!active)return;const t=setInterval(invalidate,100);return()=>clearInterval(t)},[active,invalidate]);return null}
+const Scene = ({ region, audioEnabled, reset, walk }) => {
   const audioRef = useRef(null);
   const windRef = useRef({ intensity: 0, gust: 0, cloud: 0 }); // Shared wind/weather state
   const fogRef = useRef();
@@ -187,6 +188,7 @@ const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
 
   // Dynamic atmosphere
   useFrame((state) => {
+    if(region.paused)return;
     const time = state.clock.getElapsedTime();
     const camY = state.camera.position.y;
 
@@ -215,7 +217,7 @@ const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
       const fogCloudFactor = cloudNoise * 0.3; // Less drastic on fog
       density *= (1.0 + fogCloudFactor);
 
-      fogRef.current.density = density * heightFactor;
+      fogRef.current.density = Math.min(density * heightFactor,.005);
     }
 
     if (lightRef.current) {
@@ -283,20 +285,20 @@ const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
 
   return (
     <>
-      <AudioController ref={audioRef} region={region} enabled={audioEnabled} windRef={windRef} />
-      <Controls audioRef={audioRef} region={region} onIdleStateChange={onIdleStateChange} />
-      <fogExp2 ref={fogRef} attach="fog" args={[region.fogColor, region.fogDensity]} />
-      <SoftShadows size={25} samples={10} focus={0.5} />
+      {audioEnabled && <AudioController ref={audioRef} region={region} enabled={true} windRef={windRef} />}
+      <FrameCadence region={region} active={!region.paused||audioEnabled}/><Controls region={region} reset={reset} walk={walk}/>
+      <fogExp2 ref={fogRef} attach="fog" args={[region.fogColor, Math.min(region.fogDensity,.005)]} />
+      
 
       {/* Lighting */}
-      <ambientLight intensity={0.2} />
-      <hemisphereLight groundColor="#504434" skyColor="#b1e1ff" intensity={0.4} />
+      <ambientLight intensity={.65} />
+      <hemisphereLight groundColor="#504434" skyColor="#b1e1ff" intensity={.8} />
       <directionalLight
         ref={lightRef}
         position={[20, 30, 10]}
         intensity={1.0}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0001}
       >
         <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50, 0.5, 100]} />
@@ -308,6 +310,10 @@ const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
       <Vegetation region={region} />
       <Rocks region={region} />
       <GroundClutter region={region} />
+      {['georgia','smokies','virginia','mid-atlantic','new-england','maine'].includes(region.id)&&<group position={[getPathX(0)+3,getTerrainHeight(getPathX(0)+3,0,region.terrainParams),0]}>
+        <mesh position={[0,1.6,0]} castShadow><boxGeometry args={[.3,3.2,.28]}/><meshStandardMaterial color="#5a4936"/></mesh>
+        <mesh position={[0,2.3,.151]}><boxGeometry args={[.18,.48,.04]}/><meshStandardMaterial color="#fffdf0"/></mesh>
+      </group>}
 
       {/* Water Plane for Coastal Regions */}
       {region.terrainParams?.coastal && (
@@ -356,20 +362,20 @@ const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
       )}
 
       {/* Atmospheric particles */}
-      <AtmosphericParticles color={region.particles} type={region.particleType} />
+      <AtmosphericParticles paused={region.paused} color={region.particles} type={region.particleType} />
       {/* Close-up "Macro" Particles for Parallax/Depth */}
-      <AtmosphericParticles
+      <AtmosphericParticles paused={region.paused}
         color={region.particles}
         type={region.particleType}
-        count={300}
+        count={40}
         range={30}
         speedMultiplier={2.5}
       />
       {/* Volumetric Pollen/Dust (Reacts to light shafts) */}
-      <AtmosphericParticles
+      <AtmosphericParticles paused={region.paused}
         color="#fff7d0" // Warm dust
         type="dust"
-        count={1000}
+        count={80}
         range={40}
         speedMultiplier={4.0} // High speed for turbulent feel
         additive={true}
@@ -377,10 +383,10 @@ const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
 
       {/* Heat Shimmer specific particle layer */}
       {region.id === 'moab' && (
-        <AtmosphericParticles
+        <AtmosphericParticles paused={region.paused}
           color="#fcd34d"
           type="heatShimmer"
-          count={500}
+          count={50}
           range={60}
           speedMultiplier={0.5}
         />
@@ -392,30 +398,7 @@ const Scene = ({ region, audioEnabled, onIdleStateChange }) => {
         <meshBasicMaterial color="#fff7ed" />
       </mesh>
 
-      <EffectComposer disableNormalPass multisampling={0}>
-        <DepthOfField
-            ref={dofRef}
-            focusDistance={0.02} /* Fallback/Initial */
-            focalLength={0.15} /* Focal length */
-            bokehScale={2} /* Blur intensity */
-            height={480}
-        />
-        {sunRef.current && (
-          <GodRays
-            sun={sunRef.current}
-            samples={30}
-            density={0.95}
-            decay={0.9}
-            weight={0.6}
-            exposure={0.4}
-            clampMax={1.0}
-            blur={true}
-          />
-        )}
-        <Bloom luminanceThreshold={1.0} mipmapBlur intensity={0.5} radius={0.6} />
-        <Vignette eskil={false} offset={0.1} darkness={0.4} />
-        <Noise opacity={0.02} />
-      </EffectComposer>
+
     </>
   );
 };

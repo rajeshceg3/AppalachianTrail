@@ -1,23 +1,2 @@
 @import "tailwindcss";
-
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-#root {
-  width: 100%;
-  min-height: 100vh;
-}
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#17372f;background:#f7f4e9;line-height:1.5;font-size:16px}*{box-sizing:border-box}body{margin:0}button,select{font:inherit;font-size:14px;color:var(--text,#17372f);background:var(--surface,#fffdf3);min-height:46px;border:1px solid var(--line,#6d8879);border-radius:12px;padding:10px 14px;cursor:pointer}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #b5812a;outline-offset:3px}a{color:var(--link,#315941);font-size:14px;text-decoration:underline}h1,h2{font:normal 44px/1.1 Georgia,serif;margin:0 0 20px}h2{font-size:30px}.caption{font-size:14px;color:var(--muted,#486054)}.landing{min-height:100dvh;display:grid;grid-template-columns:1fr 1fr;background:#17372f;color:#f8f4e6}.landing section{align-self:center;padding:50px;max-width:650px}.landing h1{font-size:clamp(44px,6vw,76px)}.landing p{margin:14px 0;color:#d4dfd0;font-size:18px}.landing-art{overflow:hidden;position:relative;min-height:30vh;background:linear-gradient(150deg,#a3b9a0,#42634f 55%,#17372f)}.landing-art span{position:absolute;width:120%;height:50%;background:#254d3c;bottom:0;left:-10%;transform:rotate(-15deg);border-radius:50% 50% 0 0}.landing-art span:nth-child(2){background:#587a60;bottom:10%;left:-40%;transform:rotate(20deg)}.landing-art span:nth-child(3){background:#355843;bottom:-10%;left:10%}.landscape-guide{max-width:1100px;margin:auto;padding:48px 32px}.landscape-guide header{max-width:740px;margin-bottom:48px}.landscape-guide section{margin:48px 0}.region-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.region-card{display:flex;text-align:left;gap:14px;padding:20px}.region-card>span:last-child{flex:1}.region-card strong{display:block;font:normal 27px/1.2 Georgia,serif;margin-bottom:6px}.region-card span span{display:block;font-size:15px}.region-number{color:#5d6d52}.region-swatch{height:64px;border-radius:8px;margin-top:16px}.experience{--surface:#12352f;--text:#f8f4e6;--muted:#d0ded0;--line:#839b86;--link:#efd69e;position:relative;width:100%;height:100dvh;overflow:hidden;color:var(--text)}.experience[data-theme=light]{--surface:#fffdf3;--text:#17372f;--muted:#486054;--line:#6d8879;--link:#494c17}.scene-stage{position:absolute;inset:0}.world-toolbar{position:absolute;top:20px;left:20px;right:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;z-index:5}.world-toolbar label{background:var(--surface);padding:10px;border-radius:10px;font-size:14px}.world-toolbar select{font-size:16px;max-width:210px}.region-note{position:absolute;bottom:20px;left:20px;width:420px;max-width:calc(100% - 40px);max-height:36%;overflow:auto;padding:20px 22px;background:var(--surface);border:1px solid var(--line);border-radius:18px}.region-note h1{font-size:32px;margin:0 0 12px}.region-note p{font-size:16px;margin:8px 0}.region-note .caption{font-size:14px}canvas:focus-visible{outline:3px solid #efd69e;outline-offset:-4px}@media(max-width:700px){.landing{display:flex;flex-direction:column}.landing-art{min-height:28vh}.landing section{padding:28px 24px}.landing p{font-size:16px}.landscape-guide{padding:32px 20px}.landscape-guide h1{font-size:38px}.region-grid{grid-template-columns:1fr}.world-toolbar{left:10px;right:10px;top:10px;gap:6px}.world-toolbar label{display:none}.world-toolbar select{flex:1;max-width:none;min-width:140px}.world-toolbar button{padding:9px 10px}.scene-stage{bottom:0}.region-note{left:10px;bottom:10px;max-width:calc(100% - 20px);width:100%;max-height:35%;padding:16px}.region-note h1{font-size:27px}.region-note p{font-size:15px}.region-note .caption{font-size:14px}.keyboard-tip{display:none}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
