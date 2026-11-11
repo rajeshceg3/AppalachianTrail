@@ -123,25 +123,16 @@ h1, h2 { margin: 0; font-weight: normal; }
   padding: 10px 40px 10px 16px;
   font-size: 16px;
   color: #f2e8cf;
-  background: linear-gradient(160deg, #5c4128, #3e2b18);
+  background-color: #3e2b18;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath d='M1.5 1.5 C 5 4.5, 7 6.5, 8 8.5 C 9 6.5, 11 4.5, 14.5 1.2' fill='none' stroke='%23f2e8cf' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E"), linear-gradient(160deg, #5c4128, #3e2b18);
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 14px 9px;
   border: 2.5px solid var(--ink);
   border-radius: 8px 18px 10px 16px / 16px 10px 18px 8px;
   box-shadow: 3px 4px 0 var(--ink);
   max-width: 230px;
   text-overflow: ellipsis;
-}
-.sign-select::after {
-  content: "";
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  width: 14px;
-  height: 9px;
-  transform: translateY(-55%) rotate(1.5deg);
-  background: currentColor;
-  color: #f2e8cf;
-  clip-path: polygon(2% 8%, 50% 96%, 98% 4%, 82% 0, 50% 62%, 16% 0);
-  pointer-events: none;
 }
 .sign-select option { color: #26200f; background: #f5efe0; }
 
