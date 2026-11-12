@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber';
 import Scene from './Scene';
 import { regions } from '../data/regions';
-import { Blaze, ArrowBack, ArrowNorth, IconSound, IconMotion, IconTheme, IconPin } from './Ink';
+import { Blaze, ArrowBack, ArrowNorth, IconSound, IconMotion, IconTheme, IconPin, RegionGlyph } from './Ink';
 
 const trailIds = ['georgia', 'smokies', 'virginia', 'mid-atlantic', 'new-england', 'maine'];
 const PIN_KEY = 'at-chrome-pin';
@@ -94,14 +94,6 @@ export default function Experience({ selectedRegion, onBackToMap }) {
         <button id="back" className="hand-sign" onClick={onBackToMap}>
           <ArrowBack /> Trail maps
         </button>
-        <div className="sign-select">
-          <label htmlFor="region" className="visually-hidden">Landscape</label>
-          <select id="region" value={id} onChange={(e) => { setId(e.target.value); setWalk(0); setReset((x) => x + 1); }}>
-            {[...regions.filter((r) => trailIds.includes(r.id)), ...regions.filter((r) => !trailIds.includes(r.id))].map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-        </div>
         <div className="icon-toggles">
           <button id="sound-toggle" className="ink-toggle" aria-pressed={audioEnabled} aria-label={audioEnabled ? 'Turn sound off' : 'Turn sound on'} title={audioEnabled ? 'Sound on' : 'Sound off'} onClick={() => setAudioEnabled((x) => !x)}>
             <IconSound on={audioEnabled} />
@@ -116,6 +108,14 @@ export default function Experience({ selectedRegion, onBackToMap }) {
             <IconPin pinned={pinned} />
           </button>
         </div>
+      <nav className="region-trail" role="radiogroup" aria-label="Choose a landscape">
+        {[...regions.filter((r) => trailIds.includes(r.id)), ...regions.filter((r) => !trailIds.includes(r.id))].map((r) => (
+          <button key={r.id} type="button" data-trail={r.id} role="radio" aria-checked={id === r.id} aria-label={r.name} title={r.name} tabIndex={id === r.id ? 0 : -1} className="trail-token blaze-token" onClick={() => { setId(r.id); setWalk(0); setReset((x) => x + 1); }} onKeyDown={(ev) => { if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return; ev.preventDefault(); const list = [...regions.filter((r) => trailIds.includes(r.id)), ...regions.filter((r) => !trailIds.includes(r.id))]; const i = list.findIndex((x) => x.id === id); const n = list[(i + (ev.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length]; setId(n.id); setWalk(0); setReset((x) => x + 1); }}>
+            <RegionGlyph id={r.id} />
+          </button>
+        ))}
+      </nav>
+
       </header>
 
       <section className="region-note" aria-live="polite">
